@@ -1,0 +1,1155 @@
+const PARTICIPANT_STORAGE_KEY = "participant-predictions-v1";
+const SENT_PREDICTIONS_KEY = "sent-predictions-v1";
+
+let participantName = "";
+let participantPassword = "";
+let predictions = {};
+let matches = [];
+let sentPredictions = {}; // Stocke les pronostics envoyés par journée
+
+// Fonction simple de hachage pour le mot de passe
+function hashPassword(password) {
+  let hash = 0;
+  for (let i = 0; i < password.length; i++) {
+    const char = password.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32bit integer
+  }
+  return hash.toString();
+}
+
+// Charger automatiquement les matchs depuis Firebase
+function loadMatchesFromSharedData() {
+  const loadingDiv = document.getElementById("loading-matches");
+  
+  // Vérifier que Firebase est disponible
+  if (typeof firebase === 'undefined' || !firebase.database) {
+    console.error("❌ Firebase no está disponible");
+    
+    if (loadingDiv) {
+      loadingDiv.innerHTML = `
+        <p style="color: #ef4444;">❌ Error: Firebase no está disponible</p>
+        <p style="font-size: 0.9rem;">Verifica la configuración de Firebase</p>
+      `;
+    }
+    
+    alert(
+      `❌ Error al cargar los partidos\n\n` +
+      `Firebase no está disponible.\n\n` +
+      `Verifica que firebase-config.js está correctamente configurado`
+    );
+    return;
+  }
+  
+  try {
+    const db = firebase.database();
+    const matchesRef = db.ref('matches');
+    
+    if (loadingDiv) {
+      loadingDiv.innerHTML = `<p style="color: #3b82f6;">🔄 Cargando partidos desde Firebase...</p>`;
+    }
+    
+    // Charger les matchs depuis Firebase
+    matchesRef.once('value', (snapshot) => {
+      const firebaseMatches = snapshot.val();
+      
+      if (!firebaseMatches) {
+        console.log("ℹ️ No hay partidos en Firebase todavía");
+        
+        if (loadingDiv) {
+          loadingDiv.innerHTML = `
+            <p style="color: #f59e0b;">⚠️ No hay partidos disponibles</p>
+            <p style="font-size: 0.9rem;">El administrador debe importar los partidos primero</p>
+          `;
+        }
+        
+        return;
+      }
+      
+      // Convertir l'objet Firebase en tableau
+      matches = Object.values(firebaseMatches).map(matchData => ({
+        homeTeam: matchData.homeTeam,
+        awayTeam: matchData.awayTeam,
+        date: matchData.date,
+        stage: matchData.stage,
+        group: matchData.group || null
+      }));
+      
+      console.log(`✅ ${matches.length} partidos cargados desde Firebase`);
+      
+      if (loadingDiv) {
+        loadingDiv.innerHTML = `<p style="color: #10b981;">✅ ${matches.length} partidos cargados desde Firebase</p>`;
+        setTimeout(() => {
+          loadingDiv.style.display = "none";
+        }, 2000);
+      }
+      
+      // Activer le bouton de démarrage
+      startBtn.disabled = false;
+      startBtn.style.opacity = "1";
+    });
+    
+  } catch (error) {
+    console.error("❌ Error al cargar los partidos desde Firebase:", error);
+    
+    if (loadingDiv) {
+      loadingDiv.innerHTML = `
+        <p style="color: #ef4444;">❌ Error al cargar los partidos</p>
+        <p style="font-size: 0.9rem;">${error.message}</p>
+      `;
+    }
+    
+    alert(
+      `❌ Error al cargar los partidos\n\n` +
+      `No se pudo cargar desde Firebase.\n\n` +
+      `Error: ${error.message}`
+    );
+  }
+}
+
+// Écouter les nouveaux matchs depuis Firebase
+function listenToNewMatchesFromFirebase() {
+  if (typeof firebase === 'undefined' || !firebase.database) {
+    console.log("⚠️ Firebase no disponible - no se escucharán nuevos partidos");
+    return;
+  }
+  
+  try {
+    const db = firebase.database();
+    const matchesRef = db.ref('matches');
+    
+    // Écouter les nouveaux matchs ajoutés
+    matchesRef.on('child_added', (snapshot) => {
+      const newMatch = snapshot.val();
+      
+      // Vérifier si le match n'existe pas déjà (éviter les doublons)
+      const matchExists = matches.some(m =>
+        m.homeTeam === newMatch.homeTeam &&
+        m.awayTeam === newMatch.awayTeam &&
+        m.date === newMatch.date
+      );
+      
+      if (!matchExists) {
+        console.log("🆕 Nuevo partido detectado desde Firebase:", newMatch);
+        
+        // Ajouter le match à la liste
+        matches.push({
+          homeTeam: newMatch.homeTeam,
+          awayTeam: newMatch.awayTeam,
+          date: newMatch.date,
+          stage: newMatch.stage || "Fase de grupos"
+        });
+        
+        // Initialiser une prédiction vide pour ce match
+        const matchIndex = matches.length - 1;
+        if (!predictions[matchIndex]) {
+          predictions[matchIndex] = { home: "", away: "" };
+        }
+        
+        // Si l'utilisateur est connecté, mettre à jour l'affichage
+        if (participantName && mainView.style.display !== "none") {
+          renderMatches();
+          updateStats();
+          
+          // Afficher une notification
+          const notification = document.createElement('div');
+          notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #3b82f6;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+          `;
+          notification.innerHTML = `
+            🆕 <strong>Nuevo partido agregado:</strong><br>
+            ${newMatch.homeTeam} vs ${newMatch.awayTeam}
+          `;
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => notification.remove(), 300);
+          }, 5000);
+        }
+      }
+    });
+    
+    // Écouter la suppression de tous les matchs (quand le nœud /matches est supprimé)
+    matchesRef.on('value', (snapshot) => {
+      // Si le snapshot est null, cela signifie que tous les matchs ont été supprimés
+      if (!snapshot.exists() && matches.length > 0) {
+        console.log("🗑️ Todos los partidos han sido eliminados desde Firebase");
+        
+        // Vider la liste des matchs
+        matches = [];
+        predictions = {};
+        sentPredictions = {};
+        
+        // Nettoyer le localStorage
+        localStorage.removeItem(PARTICIPANT_STORAGE_KEY);
+        localStorage.removeItem(SENT_PREDICTIONS_KEY);
+        console.log("🧹 LocalStorage limpiado");
+        
+        // Si l'utilisateur est connecté, mettre à jour l'affichage
+        if (participantName && mainView.style.display !== "none") {
+          renderMatches();
+          updateStats();
+          
+          // Afficher une notification
+          const notification = document.createElement('div');
+          notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #ef4444;
+            color: white;
+            padding: 1rem 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+          `;
+          notification.innerHTML = `
+            🗑️ <strong>Todos los partidos han sido eliminados</strong><br>
+            La lista ha sido vaciada por el administrador<br>
+            <small>Tus pronósticos han sido eliminados</small>
+          `;
+          document.body.appendChild(notification);
+          
+          setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-in';
+            setTimeout(() => notification.remove(), 300);
+          }, 5000);
+        }
+      }
+    });
+    
+    console.log("✅ Escuchando nuevos partidos y eliminaciones desde Firebase");
+  } catch (error) {
+    console.error("❌ Error al configurar el listener de Firebase:", error);
+  }
+}
+
+// Matchs par défaut (fallback - ne devrait plus être utilisé)
+const defaultMatches = [
+  {
+    "homeTeam": "Estados Unidos",
+    "awayTeam": "Gales",
+    "date": "2026-06-11T21:00",
+    "stage": "Fase de grupos - Grupo A"
+  },
+  {
+    "homeTeam": "México",
+    "awayTeam": "Ecuador",
+    "date": "2026-06-12T18:00",
+    "stage": "Fase de grupos - Grupo A"
+  },
+  {
+    "homeTeam": "Canadá",
+    "awayTeam": "Marruecos",
+    "date": "2026-06-12T21:00",
+    "stage": "Fase de grupos - Grupo B"
+  },
+  {
+    "homeTeam": "Argentina",
+    "awayTeam": "Australia",
+    "date": "2026-06-13T15:00",
+    "stage": "Fase de grupos - Grupo B"
+  },
+  {
+    "homeTeam": "Francia",
+    "awayTeam": "Dinamarca",
+    "date": "2026-06-13T18:00",
+    "stage": "Fase de grupos - Grupo C"
+  },
+  {
+    "homeTeam": "Brasil",
+    "awayTeam": "Serbia",
+    "date": "2026-06-13T21:00",
+    "stage": "Fase de grupos - Grupo C"
+  },
+  {
+    "homeTeam": "España",
+    "awayTeam": "Croacia",
+    "date": "2026-06-14T15:00",
+    "stage": "Fase de grupos - Grupo D"
+  },
+  {
+    "homeTeam": "Alemania",
+    "awayTeam": "Japón",
+    "date": "2026-06-14T18:00",
+    "stage": "Fase de grupos - Grupo D"
+  },
+  {
+    "homeTeam": "Inglaterra",
+    "awayTeam": "Irán",
+    "date": "2026-06-14T21:00",
+    "stage": "Fase de grupos - Grupo E"
+  },
+  {
+    "homeTeam": "Países Bajos",
+    "awayTeam": "Senegal",
+    "date": "2026-06-15T15:00",
+    "stage": "Fase de grupos - Grupo E"
+  },
+  {
+    "homeTeam": "Portugal",
+    "awayTeam": "Ghana",
+    "date": "2026-06-15T18:00",
+    "stage": "Fase de grupos - Grupo F"
+  },
+  {
+    "homeTeam": "Bélgica",
+    "awayTeam": "Suiza",
+    "date": "2026-06-15T21:00",
+    "stage": "Fase de grupos - Grupo F"
+  },
+  {
+    "homeTeam": "Uruguay",
+    "awayTeam": "Corea del Sur",
+    "date": "2026-06-16T15:00",
+    "stage": "Fase de grupos - Grupo G"
+  },
+  {
+    "homeTeam": "Polonia",
+    "awayTeam": "Arabia Saudita",
+    "date": "2026-06-16T18:00",
+    "stage": "Fase de grupos - Grupo G"
+  },
+  {
+    "homeTeam": "Italia",
+    "awayTeam": "Camerún",
+    "date": "2026-06-16T21:00",
+    "stage": "Fase de grupos - Grupo H"
+  },
+  {
+    "homeTeam": "Colombia",
+    "awayTeam": "Túnez",
+    "date": "2026-06-17T15:00",
+    "stage": "Fase de grupos - Grupo H"
+  },
+  {
+    "homeTeam": "Estados Unidos",
+    "awayTeam": "Ecuador",
+    "date": "2026-06-17T18:00",
+    "stage": "Fase de grupos - Grupo A"
+  },
+  {
+    "homeTeam": "Gales",
+    "awayTeam": "México",
+    "date": "2026-06-17T21:00",
+    "stage": "Fase de grupos - Grupo A"
+  },
+  {
+    "homeTeam": "Canadá",
+    "awayTeam": "Argentina",
+    "date": "2026-06-18T15:00",
+    "stage": "Fase de grupos - Grupo B"
+  },
+  {
+    "homeTeam": "Marruecos",
+    "awayTeam": "Australia",
+    "date": "2026-06-18T18:00",
+    "stage": "Fase de grupos - Grupo B"
+  },
+  {
+    "homeTeam": "Francia",
+    "awayTeam": "Brasil",
+    "date": "2026-06-18T21:00",
+    "stage": "Fase de grupos - Grupo C"
+  },
+  {
+    "homeTeam": "Dinamarca",
+    "awayTeam": "Serbia",
+    "date": "2026-06-19T15:00",
+    "stage": "Fase de grupos - Grupo C"
+  },
+  {
+    "homeTeam": "España",
+    "awayTeam": "Alemania",
+    "date": "2026-06-19T18:00",
+    "stage": "Fase de grupos - Grupo D"
+  },
+  {
+    "homeTeam": "Croacia",
+    "awayTeam": "Japón",
+    "date": "2026-06-19T21:00",
+    "stage": "Fase de grupos - Grupo D"
+  }
+];
+
+// Éléments DOM
+const setupView = document.getElementById("setup-view");
+const mainView = document.getElementById("main-view");
+const participantNameInput = document.getElementById("participant-name-input");
+const participantPasswordInput = document.getElementById("participant-password-input");
+const startBtn = document.getElementById("start-btn");
+const participantNameDisplay = document.getElementById("participant-name-display");
+const matchesList = document.getElementById("matches-list");
+const saveBtn = document.getElementById("save-btn");
+const exportBtn = document.getElementById("export-btn");
+const resetBtn = document.getElementById("reset-btn");
+const successMessage = document.getElementById("success-message");
+const totalMatchesEl = document.getElementById("total-matches");
+const completedPredictionsEl = document.getElementById("completed-predictions");
+const remainingPredictionsEl = document.getElementById("remaining-predictions");
+
+// Charger les données sauvegardées au démarrage
+function loadSavedData() {
+  // NE PAS charger les sentPredictions ici
+  // Ils seront chargés APRÈS la vérification du nombre de matchs lors de la connexion
+  
+  // NE PAS charger automatiquement - toujours demander le mot de passe
+  // Les données sont sauvegardées mais l'utilisateur doit se reconnecter à chaque fois
+  return false;
+}
+
+// Charger les compteurs de pronostics envoyés (appelé après vérification)
+function loadSentPredictions() {
+  const sentData = localStorage.getItem(SENT_PREDICTIONS_KEY);
+  if (sentData) {
+    try {
+      sentPredictions = JSON.parse(sentData);
+      console.log("📊 Contadores de pronósticos cargados");
+    } catch (error) {
+      console.error("Error loading sent predictions:", error);
+      sentPredictions = {};
+    }
+  }
+}
+
+// Sauvegarder les données (LOCAL uniquement)
+function saveData() {
+  const data = {
+    participantName,
+    participantPassword,
+    predictions,
+    lastSaved: new Date().toISOString()
+  };
+  localStorage.setItem(PARTICIPANT_STORAGE_KEY, JSON.stringify(data));
+  
+  // NE PAS synchroniser avec Firebase ici
+  // Firebase sera utilisé uniquement avec le bouton "Enviar"
+  
+  showSuccessMessage("local");
+}
+
+// Envoyer vers Firebase
+function sendToFirebase() {
+  // Vérifier que Firebase est initialisé
+  if (typeof firebase === 'undefined' || !firebase.database) {
+    alert("❌ Firebase no está disponible.\n\nNo se pueden enviar los pronósticos al administrador.\n\nPor favor, verifica tu conexión a Internet.");
+    return;
+  }
+  
+  try {
+    const db = firebase.database();
+    const participantId = participantName.toLowerCase().replace(/\s+/g, "-");
+    
+    // Préparer les données pour Firebase (avec mot de passe haché)
+    const firebaseData = {
+      participantName: participantName,
+      passwordHash: participantPassword, // Mot de passe haché
+      lastUpdated: new Date().toISOString(),
+      predictions: matches.map((match, index) => ({
+        homeTeam: match.homeTeam,
+        awayTeam: match.awayTeam,
+        date: match.date,
+        stage: match.stage,
+        prediction: predictions[index] || { home: "", away: "" }
+      }))
+    };
+    
+    // Envoyer à Firebase
+    db.ref('participants/' + participantId).set(firebaseData)
+      .then(() => {
+        console.log("✅ Pronósticos enviados a Firebase");
+        showSuccessMessage("firebase");
+      })
+      .catch((error) => {
+        console.error("❌ Error al enviar a Firebase:", error);
+        alert("❌ Error al enviar los pronósticos.\n\nPor favor, intenta de nuevo.");
+      });
+      
+  } catch (error) {
+    console.error("❌ Error en sendToFirebase:", error);
+    alert("❌ Error al enviar los pronósticos.\n\nPor favor, intenta de nuevo.");
+  }
+}
+
+// Envoyer vers Firebase avec validation des journées
+function sendToFirebaseWithValidation(validPredictions, dayIndex) {
+  // Vérifier que Firebase est initialisé
+  if (typeof firebase === 'undefined' || !firebase.database) {
+    alert("❌ Firebase no está disponible.\n\nNo se pueden enviar los pronósticos al administrador.\n\nPor favor, verifica tu conexión a Internet.");
+    return;
+  }
+  
+  try {
+    const db = firebase.database();
+    const participantId = participantName.toLowerCase().replace(/\s+/g, "-");
+    
+    // Préparer les données pour Firebase (avec mot de passe haché)
+    const firebaseData = {
+      participantName: participantName,
+      passwordHash: participantPassword, // Mot de passe haché
+      lastUpdated: new Date().toISOString(),
+      predictions: matches.map((match, index) => ({
+        homeTeam: match.homeTeam,
+        awayTeam: match.awayTeam,
+        date: match.date,
+        stage: match.stage,
+        prediction: validPredictions[index] || { home: "", away: "" }
+      }))
+    };
+    
+    // Envoyer à Firebase
+    db.ref('participants/' + participantId).set(firebaseData)
+      .then(() => {
+        console.log("✅ Pronósticos enviados a Firebase");
+        
+        // Compter uniquement les pronostics non vides
+        let nonEmptyCount = 0;
+        Object.values(validPredictions).forEach(pred => {
+          if (pred && pred.home !== "" && pred.away !== "") {
+            nonEmptyCount++;
+          }
+        });
+        
+        // Marquer cette journée comme envoyée avec le nombre de pronostics non vides
+        if (!sentPredictions[participantName]) {
+          sentPredictions[participantName] = {};
+        }
+        sentPredictions[participantName][dayIndex] = {
+          sentAt: new Date().toISOString(),
+          count: nonEmptyCount
+        };
+        
+        // Sauvegarder dans localStorage
+        localStorage.setItem(SENT_PREDICTIONS_KEY, JSON.stringify(sentPredictions));
+        
+        showSuccessMessage("firebase");
+        
+        // Rafraîchir l'affichage pour mettre à jour les compteurs
+        renderMatches();
+      })
+      .catch((error) => {
+        console.error("❌ Error al enviar a Firebase:", error);
+        alert("❌ Error al enviar los pronósticos.\n\nPor favor, intenta de nuevo.");
+      });
+      
+  } catch (error) {
+    console.error("❌ Error en sendToFirebaseWithValidation:", error);
+    alert("❌ Error al enviar los pronósticos.\n\nPor favor, intenta de nuevo.");
+  }
+}
+
+// Afficher le message de succès
+function showSuccessMessage(type = "local") {
+  if (type === "local") {
+    successMessage.innerHTML = "✅ ¡Tus pronósticos han sido guardados localmente!";
+    successMessage.style.background = "#10b981"; // Vert
+  } else if (type === "firebase") {
+    successMessage.innerHTML = "🎉 ¡Tus pronósticos han sido enviados al administrador con éxito!";
+    successMessage.style.background = "#3b82f6"; // Bleu
+  }
+  
+  successMessage.style.display = "block";
+  
+  // Scroll vers le haut pour voir le message
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  
+  setTimeout(() => {
+    successMessage.style.display = "none";
+  }, 5000);
+}
+
+// Démarrer la saisie des pronostics
+startBtn.addEventListener("click", async () => {
+  const name = participantNameInput.value.trim();
+  const password = participantPasswordInput.value.trim();
+
+  if (!name) {
+    alert("⚠️ Por favor ingresa tu nombre");
+    return;
+  }
+
+  if (!password) {
+    alert("⚠️ Por favor ingresa una contraseña");
+    return;
+  }
+
+  if (password.length < 4) {
+    alert("⚠️ La contraseña debe tener al menos 4 caracteres");
+    return;
+  }
+
+  if (matches.length === 0) {
+    alert("⚠️ Por favor carga primero el archivo de partidos");
+    return;
+  }
+
+  const inputPasswordHash = hashPassword(password);
+
+  // Vérifier d'abord dans localStorage (mode local)
+  const saved = localStorage.getItem(PARTICIPANT_STORAGE_KEY);
+  if (saved) {
+    try {
+      const data = JSON.parse(saved);
+      if (data.participantName && data.participantName.toLowerCase() === name.toLowerCase()) {
+        // Le participant existe en local, vérifier le mot de passe
+        if (data.participantPassword !== inputPasswordHash) {
+          alert("❌ Contraseña incorrecta para este participante.\n\nSi olvidaste tu contraseña, reinicia la aplicación con el botón 'Reiniciar'.");
+          return;
+        }
+        
+        // Mot de passe correct
+        participantName = data.participantName;
+        participantPassword = data.participantPassword;
+        
+        // Vérifier si le nombre de matchs correspond
+        const savedPredictionsCount = Object.keys(data.predictions || {}).length;
+        if (savedPredictionsCount !== matches.length) {
+          console.log(`⚠️ Número de partidos cambió (${savedPredictionsCount} → ${matches.length}). Reiniciando pronósticos.`);
+          // Réinitialiser les prédictions si le nombre de matchs a changé
+          predictions = {};
+          sentPredictions = {};
+          matches.forEach((match, index) => {
+            predictions[index] = { home: "", away: "" };
+          });
+          // Nettoyer le localStorage
+          localStorage.removeItem(PARTICIPANT_STORAGE_KEY);
+          localStorage.removeItem(SENT_PREDICTIONS_KEY);
+          console.log("🧹 LocalStorage y contadores limpiados");
+        } else {
+          // Charger les données existantes
+          predictions = data.predictions || {};
+          
+          // Initialiser les prédictions manquantes
+          matches.forEach((match, index) => {
+            if (!predictions[index]) {
+              predictions[index] = { home: "", away: "" };
+            }
+          });
+          
+          // Charger les compteurs de pronostics envoyés
+          loadSentPredictions();
+        }
+        
+        showMainView();
+        return;
+      }
+    } catch (error) {
+      console.error("Error al cargar datos locales:", error);
+    }
+  }
+
+  // Vérifier dans Firebase si disponible
+  if (typeof firebase !== 'undefined' && firebase.database) {
+    try {
+      const db = firebase.database();
+      const participantId = name.toLowerCase().replace(/\s+/g, "-");
+      const snapshot = await db.ref('participants/' + participantId).once('value');
+      
+      if (snapshot.exists()) {
+        // Le participant existe dans Firebase, vérifier le mot de passe
+        const existingData = snapshot.val();
+        
+        if (existingData.passwordHash !== inputPasswordHash) {
+          alert("❌ Contraseña incorrecta para este participante.\n\nSi olvidaste tu contraseña, contacta al administrador.");
+          return;
+        }
+        
+        // Mot de passe correct
+        participantName = name;
+        participantPassword = inputPasswordHash;
+        
+        // Vérifier si le nombre de matchs correspond
+        const savedPredictionsCount = existingData.predictions ? existingData.predictions.length : 0;
+        if (savedPredictionsCount !== matches.length) {
+          console.log(`⚠️ Número de partidos cambió en Firebase (${savedPredictionsCount} → ${matches.length}). Reiniciando pronósticos.`);
+          // Réinitialiser les prédictions si le nombre de matchs a changé
+          predictions = {};
+          sentPredictions = {};
+          matches.forEach((match, index) => {
+            predictions[index] = { home: "", away: "" };
+          });
+          // Nettoyer Firebase pour ce participant
+          await db.ref('participants/' + participantId).remove();
+          // Nettoyer le localStorage
+          localStorage.removeItem(PARTICIPANT_STORAGE_KEY);
+          localStorage.removeItem(SENT_PREDICTIONS_KEY);
+          console.log("🧹 Datos antiguos eliminados de Firebase y localStorage");
+        } else {
+          // Charger les prédictions existantes
+          predictions = {};
+          if (existingData.predictions) {
+            existingData.predictions.forEach((pred, index) => {
+              predictions[index] = pred.prediction;
+            });
+          }
+          
+          // Charger les compteurs de pronostics envoyés
+          loadSentPredictions();
+        }
+        
+        // Initialiser les prédictions manquantes
+        matches.forEach((match, index) => {
+          if (!predictions[index]) {
+            predictions[index] = { home: "", away: "" };
+          }
+        });
+        
+        saveData();
+        showMainView();
+        return;
+      }
+    } catch (error) {
+      console.warn("⚠️ Firebase no disponible, usando modo local:", error.message);
+    }
+  }
+
+  // Nouveau participant (ni en local, ni dans Firebase)
+  participantName = name;
+  participantPassword = inputPasswordHash;
+  
+  // Initialiser les prédictions vides
+  predictions = {};
+  sentPredictions = {}; // Nouveau participant = pas de pronostics envoyés
+  matches.forEach((match, index) => {
+    predictions[index] = { home: "", away: "" };
+  });
+
+  console.log("✨ Nuevo participante creado");
+  saveData();
+  showMainView();
+});
+
+// Désactiver le bouton au démarrage jusqu'à ce que les matchs soient chargés
+startBtn.disabled = true;
+startBtn.style.opacity = "0.5";
+
+// Charger les matchs automatiquement au démarrage depuis matches-data.js
+loadMatchesFromSharedData();
+
+// Démarrer l'écoute des nouveaux matchs depuis Firebase
+listenToNewMatchesFromFirebase();
+
+// Afficher la vue principale
+function showMainView() {
+  setupView.style.display = "none";
+  mainView.style.display = "block";
+  participantNameDisplay.textContent = participantName;
+  renderMatches();
+  updateStats();
+}
+
+// Formater la date
+function formatDate(dateString) {
+  if (!dateString) return "Fecha no definida";
+  
+  const date = new Date(dateString);
+  
+  // Heure française
+  const frenchTime = date.toLocaleString("es-ES", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+  
+  // Heure colombienne (France -7h)
+  const colombianDate = new Date(date.getTime() - (7 * 60 * 60 * 1000));
+  const colombianTime = colombianDate.toLocaleTimeString("es-ES", {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+  
+  return `${frenchTime} (hora francesa) - ${colombianTime} (hora colombiana)`;
+}
+
+// Grouper les matchs par journée selon leur phase
+// Phase de groupes: 3 journées de 24 matchs
+// 16èmes de finale: 1 journée de 16 matchs
+// 8èmes de finale: 1 journée de 8 matchs
+// Quarts de finale: 1 journée de 4 matchs
+// Demi-finales: 1 journée de 2 matchs
+// Finales: 1 journée de 2 matchs (petite finale + finale)
+function groupMatchesByDay() {
+  const dayGroups = [];
+  let currentIndex = 0;
+  
+  // Définir la structure des journées
+  const dayStructure = [
+    { name: "JORNADA 1", count: 24, stage: "Fase de grupos" },
+    { name: "JORNADA 2", count: 24, stage: "Fase de grupos" },
+    { name: "JORNADA 3", count: 24, stage: "Fase de grupos" },
+    { name: "DIECISEISAVOS DE FINAL", count: 16, stage: "Dieciseisavos de final" },
+    { name: "OCTAVOS DE FINAL", count: 8, stage: "Octavos de final" },
+    { name: "CUARTOS DE FINAL", count: 4, stage: "Cuartos de final" },
+    { name: "SEMIFINALES", count: 2, stage: "Semifinales" },
+    { name: "FINALES", count: 2, stage: "Finales" }
+  ];
+  
+  // Grouper les matchs selon la structure définie
+  for (const dayDef of dayStructure) {
+    const dayMatches = matches.slice(currentIndex, currentIndex + dayDef.count).map((match, idx) => ({
+      ...match,
+      originalIndex: currentIndex + idx
+    }));
+    
+    if (dayMatches.length > 0) {
+      dayGroups.push({
+        name: dayDef.name,
+        matches: dayMatches,
+        stage: dayDef.stage,
+        date: dayMatches[0].date
+      });
+      currentIndex += dayDef.count;
+    }
+  }
+  
+  return dayGroups;
+}
+
+// Vérifier si une journée est verrouillée (24h avant le premier match)
+function isDayLocked(dayMatches) {
+  if (!dayMatches || dayMatches.length === 0) return false;
+  
+  // Trouver le premier match de la journée
+  const firstMatch = dayMatches.reduce((earliest, match) => {
+    const matchDate = new Date(match.date);
+    const earliestDate = new Date(earliest.date);
+    return matchDate < earliestDate ? match : earliest;
+  });
+  
+  const firstMatchDate = new Date(firstMatch.date);
+  const now = new Date();
+  const deadline = new Date(firstMatchDate.getTime() - (24 * 60 * 60 * 1000)); // 24h avant
+  
+  return now >= deadline;
+}
+
+// Rendre les matchs groupés par journée
+function renderMatches() {
+  matchesList.innerHTML = "";
+
+  if (matches.length === 0) {
+    matchesList.innerHTML = '<p class="empty-state">No hay partidos disponibles.</p>';
+    return;
+  }
+
+  // Titre principal
+  const mainTitle = document.createElement("div");
+  mainTitle.style.cssText = `
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    text-align: center;
+  `;
+  mainTitle.innerHTML = `
+    <h2 style="margin: 0; font-size: 1.8rem;">⚽ COPA DEL MUNDO FIFA 2026</h2>
+    <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">48 equipos - 104 partidos (72 fase de grupos + 32 fase final)</p>
+  `;
+  matchesList.appendChild(mainTitle);
+
+  // Grouper les matchs par journée
+  const dayGroups = groupMatchesByDay();
+  
+  dayGroups.forEach((dayGroup, dayIndex) => {
+    const dayName = dayGroup.name || `JORNADA ${dayIndex + 1}`;
+    const totalMatches = dayGroup.matches.length;
+    const isLocked = isDayLocked(dayGroup.matches);
+    const firstMatchDate = new Date(dayGroup.matches[0].date);
+    const deadline = new Date(firstMatchDate.getTime() - (24 * 60 * 60 * 1000));
+    
+    // Compter les pronostics enregistrés (sauvegardés localement) pour cette journée
+    let savedCount = 0;
+    dayGroup.matches.forEach(match => {
+      const pred = predictions[match.originalIndex];
+      if (pred && pred.home !== "" && pred.away !== "") {
+        savedCount++;
+      }
+    });
+    
+    // Compter les pronostics envoyés pour cette journée
+    let sentCount = 0;
+    if (sentPredictions[participantName] && sentPredictions[participantName][dayIndex]) {
+      sentCount = sentPredictions[participantName][dayIndex].count || 0;
+    }
+    
+    // Section de la journée
+    const daySection = document.createElement("div");
+    daySection.style.cssText = `
+      margin-bottom: 2.5rem;
+      border: 2px solid ${isLocked ? '#ef4444' : '#667eea'};
+      border-radius: 12px;
+      overflow: hidden;
+      background: ${isLocked ? 'rgba(239, 68, 68, 0.05)' : 'rgba(102, 126, 234, 0.05)'};
+    `;
+    
+    // En-tête de la journée
+    const dayHeader = document.createElement("div");
+    dayHeader.style.cssText = `
+      background: ${isLocked ? '#ef4444' : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'};
+      color: white;
+      padding: 1.2rem 1.5rem;
+    `;
+    dayHeader.innerHTML = `
+      <h3 style="margin: 0; font-size: 1.4rem;">
+        ${isLocked ? '🔒' : '📅'} ${dayName}
+      </h3>
+      <p style="margin: 0.5rem 0 0 0; font-size: 0.95rem; opacity: 0.95;">
+        ${formatDate(dayGroup.matches[0].date).split(',')[0]}
+      </p>
+      <div style="margin-top: 0.8rem; display: flex; gap: 1.5rem; font-size: 0.9rem;">
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.2rem;">💾</span>
+          <span><strong>${savedCount}/${totalMatches}</strong> pronósticos guardados</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-size: 1.2rem;">📤</span>
+          <span><strong>${sentCount}/${totalMatches}</strong> pronósticos enviados</span>
+        </div>
+      </div>
+    `;
+    daySection.appendChild(dayHeader);
+    
+    // Avertissement de délai
+    const warningBox = document.createElement("div");
+    warningBox.style.cssText = `
+      padding: 1rem 1.5rem;
+      background: ${isLocked ? '#fee2e2' : '#dbeafe'};
+      border-bottom: 1px solid ${isLocked ? '#fecaca' : '#bfdbfe'};
+    `;
+    
+    if (isLocked) {
+      warningBox.innerHTML = `
+        <p style="margin: 0; color: #991b1b; font-weight: bold;">
+          ⚠️ JORNADA CERRADA - Los pronósticos para esta jornada ya no pueden ser modificados
+        </p>
+        <p style="margin: 0.5rem 0 0 0; color: #7f1d1d; font-size: 0.9rem;">
+          La fecha límite era: ${formatDate(deadline.toISOString())}
+        </p>
+      `;
+    } else {
+      warningBox.innerHTML = `
+        <p style="margin: 0; color: #1e40af; font-weight: bold;">
+          ⏰ Fecha límite para enviar pronósticos de esta jornada:
+        </p>
+        <p style="margin: 0.5rem 0 0 0; color: #1e3a8a; font-size: 0.95rem;">
+          ${formatDate(deadline.toISOString())}
+        </p>
+        <p style="margin: 0.5rem 0 0 0; color: #1e3a8a; font-size: 0.85rem; font-style: italic;">
+          (24 horas antes del primer partido de la jornada)
+        </p>
+      `;
+    }
+    daySection.appendChild(warningBox);
+    
+    // Conteneur des matchs
+    const matchesContainer = document.createElement("div");
+    matchesContainer.style.cssText = `
+      padding: 1.5rem;
+    `;
+    
+    // Rendre chaque match de la journée
+    dayGroup.matches.forEach((match) => {
+      const index = match.originalIndex;
+      const card = document.createElement("div");
+      card.className = "match-card-participant";
+      card.style.cssText = `
+        opacity: ${isLocked ? '0.6' : '1'};
+        pointer-events: ${isLocked ? 'none' : 'auto'};
+      `;
+
+      const prediction = predictions[index] || { home: "", away: "" };
+
+      card.innerHTML = `
+        <h3>${match.homeTeam} - ${match.awayTeam}</h3>
+        <p class="match-date-participant">📅 ${formatDate(match.date)}</p>
+        <div class="prediction-input-group">
+          <label>
+            <strong>${match.homeTeam}</strong>
+            <input
+              type="number"
+              min="0"
+              max="99"
+              value="${prediction.home}"
+              data-index="${index}"
+              data-side="home"
+              placeholder="Marcador"
+              ${isLocked ? 'disabled' : ''}
+            />
+          </label>
+          <div class="vs-separator">VS</div>
+          <label>
+            <strong>${match.awayTeam}</strong>
+            <input
+              type="number"
+              min="0"
+              max="99"
+              value="${prediction.away}"
+              data-index="${index}"
+              data-side="away"
+              placeholder="Marcador"
+              ${isLocked ? 'disabled' : ''}
+            />
+          </label>
+        </div>
+      `;
+
+      // Ajouter les événements de changement
+      if (!isLocked) {
+        const inputs = card.querySelectorAll("input");
+        inputs.forEach((input) => {
+          input.addEventListener("input", (e) => {
+            const index = parseInt(e.target.dataset.index);
+            const side = e.target.dataset.side;
+            const value = e.target.value;
+
+            if (!predictions[index]) {
+              predictions[index] = { home: "", away: "" };
+            }
+
+            predictions[index][side] = value === "" ? "" : parseInt(value);
+            updateStats();
+          });
+        });
+      }
+
+      matchesContainer.appendChild(card);
+    });
+    
+    daySection.appendChild(matchesContainer);
+    
+    // Ajouter les boutons d'action après chaque journée
+    const actionButtonsContainer = document.createElement("div");
+    actionButtonsContainer.className = "action-buttons";
+    actionButtonsContainer.style.cssText = `
+      margin-top: 1.5rem;
+      padding-top: 1.5rem;
+      border-top: 2px solid ${isLocked ? '#ef4444' : '#667eea'};
+    `;
+    actionButtonsContainer.innerHTML = `
+      <button type="button" class="save-btn btn-save">
+        💾 Guardar mis pronósticos
+      </button>
+      <button type="button" class="export-btn btn-export">
+        📤 Enviar mis pronósticos
+      </button>
+      <button type="button" class="reset-btn btn-reset">
+        🔄 Reiniciar
+      </button>
+    `;
+    
+    daySection.appendChild(actionButtonsContainer);
+    matchesList.appendChild(daySection);
+    
+    // Attacher les événements aux boutons de cette journée
+    const saveBtnDay = actionButtonsContainer.querySelector(".save-btn");
+    const exportBtnDay = actionButtonsContainer.querySelector(".export-btn");
+    const resetBtnDay = actionButtonsContainer.querySelector(".reset-btn");
+    
+    saveBtnDay.addEventListener("click", () => {
+      saveData();
+    });
+    
+    exportBtnDay.addEventListener("click", () => {
+      // Identifier la journée concernée par ce bouton
+      const currentDayIndex = dayIndex;
+      const currentDayGroup = dayGroups[currentDayIndex];
+      
+      // Vérifier si cette journée est verrouillée
+      const isCurrentDayLocked = isDayLocked(currentDayGroup.matches);
+      
+      if (isCurrentDayLocked) {
+        alert(
+          "❌ ERROR: Esta jornada está cerrada\n\n" +
+          "No se pueden enviar pronósticos para esta jornada porque el plazo ha expirado.\n\n" +
+          "El plazo era 24 horas antes del primer partido de la jornada."
+        );
+        return;
+      }
+      
+      // Vérifier les pronostics de cette journée uniquement
+      const dayPredictions = {};
+      let completedCount = 0;
+      let totalCount = currentDayGroup.matches.length;
+      
+      currentDayGroup.matches.forEach(match => {
+        const index = match.originalIndex;
+        const pred = predictions[index];
+        
+        if (pred && pred.home !== "" && pred.away !== "") {
+          completedCount++;
+          dayPredictions[index] = pred;
+        } else {
+          // Ajouter une prédiction vide pour les matchs non remplis
+          dayPredictions[index] = { home: "", away: "" };
+        }
+      });
+      
+      // Afficher un avertissement si tous les pronostics ne sont pas remplis
+      if (completedCount < totalCount) {
+        const confirm = window.confirm(
+          `⚠️ Atención: Solo has completado ${completedCount} de ${totalCount} pronósticos para la Jornada ${currentDayIndex + 1}.\n\n` +
+          "Los pronósticos incompletos se enviarán vacíos.\n\n" +
+          "¿Deseas enviar de todos modos?"
+        );
+        if (!confirm) return;
+      }
+      
+      // IMPORTANT: Sauvegarder d'abord localement avant d'envoyer
+      console.log("💾 Guardando pronósticos localmente antes de enviar...");
+      saveData();
+      
+      // Envoyer les pronostics de cette journée
+      console.log(`📤 Enviando pronósticos de la Jornada ${currentDayIndex + 1}:`, dayPredictions);
+      sendToFirebaseWithValidation(dayPredictions, currentDayIndex);
+    });
+    
+    resetBtnDay.addEventListener("click", () => {
+      const confirm = window.confirm(
+        "⚠️ ¿Estás seguro de que deseas reiniciar?\n\n" +
+        "Todos tus datos serán eliminados.\n\n" +
+        "Recuerda exportar tus pronósticos antes si deseas conservarlos."
+      );
+
+      if (confirm) {
+        localStorage.removeItem(PARTICIPANT_STORAGE_KEY);
+        participantName = "";
+        predictions = {};
+        setupView.style.display = "block";
+        mainView.style.display = "none";
+        participantNameInput.value = "";
+      }
+    });
+  });
+}
+
+// Mettre à jour les statistiques
+function updateStats() {
+  const total = matches.length;
+  const completed = Object.values(predictions).filter(
+    (p) => p.home !== "" && p.away !== ""
+  ).length;
+  const remaining = total - completed;
+
+  totalMatchesEl.textContent = total;
+  completedPredictionsEl.textContent = completed;
+  remainingPredictionsEl.textContent = remaining;
+}
+
+// Les gestionnaires d'événements des boutons sont maintenant dans renderMatches()
+// car les boutons sont créés dynamiquement à la fin des journées
+
+// Charger les données au démarrage
+loadSavedData();
+
+// Made with Bob

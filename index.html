@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Pronósticos Copa del Mundo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Aplicación de pronósticos</p>
+        <h1>Copa del Mundo de fútbol</h1>
+        <p class="subtitle">
+          Gestión simple de pronósticos, resultados y clasificación general.
+        </p>
+      </div>
+      <div class="header-actions">
+        <button class="tab-button active" data-view="admin">Pantalla administrador</button>
+        <button class="tab-button" data-view="public">Pantalla consulta</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section id="admin-view" class="view active">
+        <div class="panel">
+          <h2>Participantes</h2>
+          <form id="participant-form" class="inline-form">
+            <input
+              type="text"
+              id="participant-name"
+              placeholder="Agregar un participante"
+              maxlength="40"
+              required
+            />
+            <button type="submit">Agregar</button>
+          </form>
+          <ul id="participants-list" class="tag-list"></ul>
+        </div>
+
+        <div class="panel">
+          <h2>Partidos</h2>
+          <div class="import-section">
+            <div class="import-buttons">
+              <button type="button" id="import-matches-btn" class="secondary-btn">
+                📥 Importar partidos (JSON)
+              </button>
+              <button type="button" id="delete-all-matches-btn" class="danger-btn">
+                🗑️ Supprimir todos los partidos
+              </button>
+            </div>
+            <input type="file" id="file-input" accept=".json" style="display: none;" />
+          </div>
+          <form id="match-form" class="match-form">
+            <input type="text" id="home-team" placeholder="Equipo local" maxlength="40" required />
+            <input type="text" id="away-team" placeholder="Equipo visitante" maxlength="40" required />
+            <input type="datetime-local" id="match-date" required />
+            <button type="submit">Agregar el partido</button>
+          </form>
+          <div id="admin-matches" class="cards"></div>
+        </div>
+      </section>
+
+      <section id="public-view" class="view">
+        <div class="panel">
+          <h2>Clasificación general</h2>
+          <div id="ranking-table"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Pronósticos por partido</h2>
+          <div id="public-matches" class="cards"></div>
+        </div>
+      </section>
+    </main>
+
+    <template id="admin-match-template">
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <h3 class="match-title"></h3>
+            <p class="match-date"></p>
+          </div>
+          <button class="delete-match-btn" title="Supprimer ce match">×</button>
+        </div>
+
+        <div class="result-section">
+          <h4>Resultado real</h4>
+          <div class="score-grid">
+            <label>
+              Local
+              <input type="number" min="0" class="actual-home" />
+            </label>
+            <label>
+              Visitante
+              <input type="number" min="0" class="actual-away" />
+            </label>
+            <button type="button" class="save-result">Guardar el resultado</button>
+          </div>
+        </div>
+
+        <div class="prediction-section">
+          <h4>Pronósticos de los participantes</h4>
+          <div class="predictions-table"></div>
+        </div>
+      </article>
+    </template>
+
+    <template id="public-match-template">
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <h3 class="match-title"></h3>
+            <p class="match-date"></p>
+          </div>
+          <span class="result-badge"></span>
+        </div>
+        <div class="public-predictions"></div>
+      </article>
+    </template>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <!-- matches-data.js n'est plus nécessaire, on utilise Firebase -->
+    <script src="app.js"></script>
+  </body>
+</html>

@@ -1,0 +1,196 @@
+{
+  "matches": [
+    {
+      "homeTeam": "2A",
+      "awayTeam": "2B",
+      "date": "2026-06-28T21:00",
+      "stage": "Dieciseisavos de final"
+    },
+    {
+      "homeTeam": "1F",
+      "awayTeam": "2C",
+      "date": "2026-06-29T15:00",
+      "stage": "Dieciseisavos de final"
+    },
+    {
+      "homeTeam": "1E",
+      "awayTeam": "3° ABCDF",
+      "date": "2026-06-29T18:30",
+      "stage": "Dieciseisavos de final"
+    },
+    {
+      "homeTeam": "1C",
+      "awayTeam": "2F",
+      "date": "2026-06-29T22:00",
+      "stage": "Dieciseisavos de final"
+    },
+    {
+      "homeTeam": "1A",
+      "awayTeam": "3° CEFHI",
+      "date": "2026-06-30T15:00",
+      "stage": "Dieciseisavos de final"
+    },
+    {
+      "homeTeam": "2E",
+      "awayTeam": "2I",
+      "date": "2026-06-30T19:00",
+      "stage": "Dieciseisavos de final"
+    },
+    {
+      "homeTeam": "1I",
+      "awayTeam": "3° CDFGH",
+      "date": "2026-06-30T23:00",
+      "stage": "Dieciseisavos de final"
+    },
+    {
+      "homeTeam": "1D",
+      "awayTeam": "3° BEFIJ",
+      "date": "2026-07-01T14:00",
+      "stage": "Dieciseisavos de final"
+    },
+    {
+      "homeTeam": "1L",
+      "awayTeam": "3° EHIJK",
+      "date": "2026-07-01T18:00",
+      "stage": "Dieciseisavos de final"
+    },
+    {
+      "homeTeam": "1G",
+      "awayTeam": "3° AEHIJ",
+      "date": "2026-07-01T22:00",
+      "stage": "Dieciseisavos de final"
+    },
+    {
+      "homeTeam": "1H",
+      "awayTeam": "2J",
+      "date": "2026-07-02T14:00",
+      "stage": "Dieciseisavos de final"
+    },
+    {
+      "homeTeam": "1B",
+      "awayTeam": "3° EFGIJ",
+      "date": "2026-07-02T17:00",
+      "stage": "Dieciseisavos de final"
+    },
+    {
+      "homeTeam": "2K",
+      "awayTeam": "2L",
+      "date": "2026-07-02T21:00",
+      "stage": "Dieciseisavos de final"
+    },
+    {
+      "homeTeam": "1K",
+      "awayTeam": "3° DEIJL",
+      "date": "2026-07-03T03:30",
+      "stage": "Dieciseisavos de final"
+    },
+    {
+      "homeTeam": "2D",
+      "awayTeam": "2G",
+      "date": "2026-07-03T20:00",
+      "stage": "Dieciseisavos de final"
+    },
+    {
+      "homeTeam": "1J",
+      "awayTeam": "2H",
+      "date": "2026-07-04T00:00",
+      "stage": "Dieciseisavos de final"
+    },
+    {
+      "homeTeam": "V73",
+      "awayTeam": "V75",
+      "date": "2026-07-04T19:00",
+      "stage": "Octavos de final"
+    },
+    {
+      "homeTeam": "V74",
+      "awayTeam": "V77",
+      "date": "2026-07-04T23:00",
+      "stage": "Octavos de final"
+    },
+    {
+      "homeTeam": "V79",
+      "awayTeam": "V80",
+      "date": "2026-07-05T02:00",
+      "stage": "Octavos de final"
+    },
+    {
+      "homeTeam": "V76",
+      "awayTeam": "V78",
+      "date": "2026-07-05T22:00",
+      "stage": "Octavos de final"
+    },
+    {
+      "homeTeam": "V81",
+      "awayTeam": "V82",
+      "date": "2026-07-06T14:00",
+      "stage": "Octavos de final"
+    },
+    {
+      "homeTeam": "V83",
+      "awayTeam": "V84",
+      "date": "2026-07-06T21:00",
+      "stage": "Octavos de final"
+    },
+    {
+      "homeTeam": "V86",
+      "awayTeam": "V88",
+      "date": "2026-07-07T18:00",
+      "stage": "Octavos de final"
+    },
+    {
+      "homeTeam": "V85",
+      "awayTeam": "V87",
+      "date": "2026-07-07T22:00",
+      "stage": "Octavos de final"
+    },
+    {
+      "homeTeam": "V89",
+      "awayTeam": "V90",
+      "date": "2026-07-09T22:00",
+      "stage": "Cuartos de final"
+    },
+    {
+      "homeTeam": "V93",
+      "awayTeam": "V94",
+      "date": "2026-07-10T21:00",
+      "stage": "Cuartos de final"
+    },
+    {
+      "homeTeam": "V91",
+      "awayTeam": "V92",
+      "date": "2026-07-11T23:00",
+      "stage": "Cuartos de final"
+    },
+    {
+      "homeTeam": "V95",
+      "awayTeam": "V96",
+      "date": "2026-07-12T03:00",
+      "stage": "Cuartos de final"
+    },
+    {
+      "homeTeam": "V97",
+      "awayTeam": "V98",
+      "date": "2026-07-14T20:00",
+      "stage": "Semifinales"
+    },
+    {
+      "homeTeam": "V99",
+      "awayTeam": "V100",
+      "date": "2026-07-15T02:00",
+      "stage": "Semifinales"
+    },
+    {
+      "homeTeam": "P101",
+      "awayTeam": "P102",
+      "date": "2026-07-18T21:00",
+      "stage": "Finales"
+    },
+    {
+      "homeTeam": "V101",
+      "awayTeam": "V102",
+      "date": "2026-07-19T21:00",
+      "stage": "Finales"
+    }
+  ]
+}

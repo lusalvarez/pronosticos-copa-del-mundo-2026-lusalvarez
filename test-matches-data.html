@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Test matches-data.js</title>
+</head>
+<body>
+    <h1>Test de chargement de matches-data.js</h1>
+    <div id="result"></div>
+    
+    <script src="matches-data.js"></script>
+    <script>
+        const resultDiv = document.getElementById('result');
+        
+        try {
+            if (typeof MATCHES_DATA === 'undefined') {
+                resultDiv.innerHTML = '<p style="color: red;">❌ MATCHES_DATA n\'est pas défini</p>';
+            } else {
+                resultDiv.innerHTML = `
+                    <p style="color: green;">✅ MATCHES_DATA chargé avec succès</p>
+                    <p>Nombre de matchs: ${MATCHES_DATA.matches.length}</p>
+                    <p>Total attendu: ${MATCHES_DATA.totalMatches}</p>
+                    <p>Premier match: ${MATCHES_DATA.matches[0].homeTeam} vs ${MATCHES_DATA.matches[0].awayTeam}</p>
+                    <p>Dernier match: ${MATCHES_DATA.matches[MATCHES_DATA.matches.length-1].homeTeam} vs ${MATCHES_DATA.matches[MATCHES_DATA.matches.length-1].awayTeam}</p>
+                `;
+            }
+        } catch (error) {
+            resultDiv.innerHTML = `<p style="color: red;">❌ Erreur: ${error.message}</p>`;
+            console.error('Erreur détaillée:', error);
+        }
+    </script>
+</body>
+</html>

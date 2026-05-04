@@ -1,0 +1,149 @@
+{
+  "tournament": "Copa del Mundo FIFA 2026",
+  "matches": [
+    {
+      "homeTeam": "Estados Unidos",
+      "awayTeam": "Gales",
+      "date": "2026-06-11T21:00",
+      "stage": "Fase de grupos - Grupo A"
+    },
+    {
+      "homeTeam": "México",
+      "awayTeam": "Ecuador",
+      "date": "2026-06-12T18:00",
+      "stage": "Fase de grupos - Grupo A"
+    },
+    {
+      "homeTeam": "Canadá",
+      "awayTeam": "Marruecos",
+      "date": "2026-06-12T21:00",
+      "stage": "Fase de grupos - Grupo B"
+    },
+    {
+      "homeTeam": "Argentina",
+      "awayTeam": "Australia",
+      "date": "2026-06-13T15:00",
+      "stage": "Fase de grupos - Grupo B"
+    },
+    {
+      "homeTeam": "Francia",
+      "awayTeam": "Dinamarca",
+      "date": "2026-06-13T18:00",
+      "stage": "Fase de grupos - Grupo C"
+    },
+    {
+      "homeTeam": "Brasil",
+      "awayTeam": "Serbia",
+      "date": "2026-06-13T21:00",
+      "stage": "Fase de grupos - Grupo C"
+    },
+    {
+      "homeTeam": "España",
+      "awayTeam": "Croacia",
+      "date": "2026-06-14T15:00",
+      "stage": "Fase de grupos - Grupo D"
+    },
+    {
+      "homeTeam": "Alemania",
+      "awayTeam": "Japón",
+      "date": "2026-06-14T18:00",
+      "stage": "Fase de grupos - Grupo D"
+    },
+    {
+      "homeTeam": "Inglaterra",
+      "awayTeam": "Irán",
+      "date": "2026-06-14T21:00",
+      "stage": "Fase de grupos - Grupo E"
+    },
+    {
+      "homeTeam": "Países Bajos",
+      "awayTeam": "Senegal",
+      "date": "2026-06-15T15:00",
+      "stage": "Fase de grupos - Grupo E"
+    },
+    {
+      "homeTeam": "Portugal",
+      "awayTeam": "Ghana",
+      "date": "2026-06-15T18:00",
+      "stage": "Fase de grupos - Grupo F"
+    },
+    {
+      "homeTeam": "Bélgica",
+      "awayTeam": "Suiza",
+      "date": "2026-06-15T21:00",
+      "stage": "Fase de grupos - Grupo F"
+    },
+    {
+      "homeTeam": "Uruguay",
+      "awayTeam": "Corea del Sur",
+      "date": "2026-06-16T15:00",
+      "stage": "Fase de grupos - Grupo G"
+    },
+    {
+      "homeTeam": "Polonia",
+      "awayTeam": "Arabia Saudita",
+      "date": "2026-06-16T18:00",
+      "stage": "Fase de grupos - Grupo G"
+    },
+    {
+      "homeTeam": "Italia",
+      "awayTeam": "Camerún",
+      "date": "2026-06-16T21:00",
+      "stage": "Fase de grupos - Grupo H"
+    },
+    {
+      "homeTeam": "Colombia",
+      "awayTeam": "Túnez",
+      "date": "2026-06-17T15:00",
+      "stage": "Fase de grupos - Grupo H"
+    },
+    {
+      "homeTeam": "Estados Unidos",
+      "awayTeam": "Ecuador",
+      "date": "2026-06-17T18:00",
+      "stage": "Fase de grupos - Grupo A"
+    },
+    {
+      "homeTeam": "Gales",
+      "awayTeam": "México",
+      "date": "2026-06-17T21:00",
+      "stage": "Fase de grupos - Grupo A"
+    },
+    {
+      "homeTeam": "Canadá",
+      "awayTeam": "Argentina",
+      "date": "2026-06-18T15:00",
+      "stage": "Fase de grupos - Grupo B"
+    },
+    {
+      "homeTeam": "Marruecos",
+      "awayTeam": "Australia",
+      "date": "2026-06-18T18:00",
+      "stage": "Fase de grupos - Grupo B"
+    },
+    {
+      "homeTeam": "Francia",
+      "awayTeam": "Brasil",
+      "date": "2026-06-18T21:00",
+      "stage": "Fase de grupos - Grupo C"
+    },
+    {
+      "homeTeam": "Dinamarca",
+      "awayTeam": "Serbia",
+      "date": "2026-06-19T15:00",
+      "stage": "Fase de grupos - Grupo C"
+    },
+    {
+      "homeTeam": "España",
+      "awayTeam": "Alemania",
+      "date": "2026-06-19T18:00",
+      "stage": "Fase de grupos - Grupo D"
+    },
+    {
+      "homeTeam": "Croacia",
+      "awayTeam": "Japón",
+      "date": "2026-06-19T21:00",
+      "stage": "Fase de grupos - Grupo D"
+    }
+  ]
+}

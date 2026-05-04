@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nettoyage Firebase</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #ef4444;
+            margin-bottom: 20px;
+        }
+        button {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #dc2626;
+        }
+        .success {
+            background: #10b981;
+        }
+        .success:hover {
+            background: #059669;
+        }
+        #log {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9fafb;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .log-item {
+            margin: 5px 0;
+            padding: 5px;
+        }
+        .log-success {
+            color: #10b981;
+        }
+        .log-error {
+            color: #ef4444;
+        }
+        .log-info {
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧹 Nettoyage Complet Firebase</h1>
+        <p>Cette page va nettoyer TOUTES les données:</p>
+        <ul>
+            <li>Tous les matchs de Firebase</li>
+            <li>Tous les pronostics de Firebase</li>
+            <li>localStorage du navigateur</li>
+        </ul>
+        
+        <button id="cleanBtn">🗑️ NETTOYER TOUT</button>
+        <button id="closeBtn" class="success" style="display:none;">✅ Fermer et ouvrir index.html</button>
+        
+        <div id="log"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+
+    <script>
+        const logDiv = document.getElementById('log');
+        const cleanBtn = document.getElementById('cleanBtn');
+        const closeBtn = document.getElementById('closeBtn');
+
+        function addLog(message, type = 'info') {
+            const logItem = document.createElement('div');
+            logItem.className = `log-item log-${type}`;
+            logItem.textContent = `${new Date().toLocaleTimeString()} - ${message}`;
+            logDiv.appendChild(logItem);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        cleanBtn.addEventListener('click', async () => {
+            cleanBtn.disabled = true;
+            cleanBtn.textContent = '⏳ Nettoyage en cours...';
+            
+            try {
+                // 1. Nettoyer localStorage
+                addLog('🧹 Nettoyage du localStorage...', 'info');
+                localStorage.clear();
+                addLog('✅ localStorage nettoyé', 'success');
+
+                // 2. Nettoyer Firebase
+                if (typeof firebase !== 'undefined' && firebase.database) {
+                    const db = firebase.database();
+                    
+                    // Supprimer les matchs
+                    addLog('🗑️ Suppression des matchs Firebase...', 'info');
+                    await db.ref('matches').remove();
+                    addLog('✅ Matchs supprimés de Firebase', 'success');
+                    
+                    // Supprimer les participants/pronostics
+                    addLog('🗑️ Suppression des pronostics Firebase...', 'info');
+                    await db.ref('participants').remove();
+                    addLog('✅ Pronostics supprimés de Firebase', 'success');
+                    
+                    addLog('', 'info');
+                    addLog('🎉 NETTOYAGE COMPLET TERMINÉ!', 'success');
+                    addLog('', 'info');
+                    addLog('Vous pouvez maintenant:', 'info');
+                    addLog('1. Fermer cette page', 'info');
+                    addLog('2. Ouvrir index.html', 'info');
+                    addLog('3. Importer vos 72 matchs', 'info');
+                    
+                    closeBtn.style.display = 'block';
+                    closeBtn.addEventListener('click', () => {
+                        window.close();
+                        window.location.href = 'index.html';
+                    });
+                } else {
+                    addLog('❌ Firebase non disponible', 'error');
+                    cleanBtn.disabled = false;
+                    cleanBtn.textContent = '🗑️ NETTOYER TOUT';
+                }
+            } catch (error) {
+                addLog(`❌ Erreur: ${error.message}`, 'error');
+                cleanBtn.disabled = false;
+                cleanBtn.textContent = '🗑️ RÉESSAYER';
+            }
+        });
+    </script>
+</body>
+</html>

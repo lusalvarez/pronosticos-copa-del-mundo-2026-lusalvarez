@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mis Pronósticos - Copa del Mundo</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+      .participant-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+        margin-bottom: 2rem;
+        border-radius: 8px;
+      }
+
+      .participant-header h1 {
+        margin: 0 0 0.5rem 0;
+        font-size: 2rem;
+      }
+
+      .participant-name-display {
+        font-size: 1.5rem;
+        font-weight: bold;
+        margin-top: 1rem;
+        padding: 0.5rem 1rem;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 4px;
+        display: inline-block;
+      }
+
+      .setup-section {
+        max-width: 600px;
+        margin: 2rem auto;
+        padding: 2rem;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .setup-section h2 {
+        margin-top: 0;
+        color: #333;
+      }
+
+      .setup-form {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+
+      .setup-form input {
+        padding: 0.75rem;
+        font-size: 1rem;
+        border: 2px solid #ddd;
+        border-radius: 4px;
+      }
+
+      .setup-form button {
+        padding: 0.75rem;
+        font-size: 1rem;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+      }
+
+      .setup-form button:hover {
+        background: #5568d3;
+      }
+
+      .match-card-participant {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .match-card-participant h3 {
+        margin: 0 0 0.5rem 0;
+        color: #333;
+        font-size: 1.25rem;
+      }
+
+      .match-date-participant {
+        color: #666;
+        font-size: 0.9rem;
+        margin-bottom: 1rem;
+      }
+
+      .prediction-input-group {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 1rem;
+        align-items: center;
+        margin-top: 1rem;
+      }
+
+      .prediction-input-group label {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .prediction-input-group label strong {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #1e293b;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-align: center;
+        padding: 0.3rem 0;
+        letter-spacing: 0.02em;
+      }
+
+      .prediction-input-group input {
+        padding: 0.75rem;
+        font-size: 1.25rem;
+        text-align: center;
+        border: 2px solid #ddd;
+        border-radius: 4px;
+        width: 100%;
+      }
+
+      .prediction-input-group input:focus {
+        border-color: #667eea;
+        outline: none;
+      }
+
+      .vs-separator {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #999;
+      }
+
+      .action-buttons {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+        flex-wrap: wrap;
+      }
+
+      .action-buttons button {
+        flex: 1;
+        min-width: 200px;
+        padding: 1rem;
+        font-size: 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: all 0.3s;
+      }
+
+      .btn-save {
+        background: #10b981;
+        color: white;
+      }
+
+      .btn-save:hover {
+        background: #059669;
+      }
+
+      .btn-export {
+        background: #667eea;
+        color: white;
+      }
+
+      .btn-export:hover {
+        background: #5568d3;
+      }
+
+      .btn-import {
+        background: #f59e0b;
+        color: white;
+      }
+
+      .btn-import:hover {
+        background: #d97706;
+      }
+
+      .btn-reset {
+        background: #ef4444;
+        color: white;
+      }
+
+      .btn-reset:hover {
+        background: #dc2626;
+      }
+
+      .success-message {
+        background: #d1fae5;
+        color: #065f46;
+        padding: 1rem;
+        border-radius: 4px;
+        margin-bottom: 1rem;
+        text-align: center;
+        font-weight: bold;
+      }
+
+      .info-box {
+        background: #dbeafe;
+        border-left: 4px solid #3b82f6;
+        padding: 1rem;
+        margin-bottom: 2rem;
+        border-radius: 4px;
+      }
+
+      .info-box h3 {
+        margin: 0 0 0.5rem 0;
+        color: #1e40af;
+      }
+
+      .info-box p {
+        margin: 0.5rem 0;
+        color: #1e3a8a;
+      }
+
+      .stats-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+      }
+
+      .stat-card {
+        background: white;
+        padding: 1rem;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .stat-card .stat-value {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #667eea;
+      }
+
+      .stat-card .stat-label {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+      }
+
+      @media (max-width: 768px) {
+        .prediction-input-group {
+          grid-template-columns: 1fr;
+          gap: 0.5rem;
+        }
+
+        .vs-separator {
+          text-align: center;
+        }
+
+        .action-buttons button {
+          min-width: 100%;
+        }
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      @keyframes slideOut {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="setup-view" class="setup-section">
+      <h2>🎯 ¡Bienvenido!</h2>
+      <p>Ingresa tu nombre y contraseña para acceder a tus pronósticos de la Copa del Mundo 2026.</p>
+      
+      <div class="setup-form">
+        <label>
+          <strong>Tu nombre:</strong>
+          <input type="text" id="participant-name-input" placeholder="Ingresa tu nombre" maxlength="40" required />
+        </label>
+        
+        <label>
+          <strong>Contraseña:</strong>
+          <input type="password" id="participant-password-input" placeholder="Crea una contraseña" minlength="4" required />
+        </label>
+        
+        <div style="background: #fef3c7; padding: 0.75rem; border-radius: 4px; font-size: 0.9rem; color: #92400e;">
+          ⚠️ <strong>Importante:</strong> Recuerda tu contraseña. La necesitarás cada vez que quieras modificar tus pronósticos.
+        </div>
+        
+        <button type="button" id="start-btn">Comenzar mis pronósticos</button>
+      </div>
+      
+      <div id="loading-matches" style="margin-top: 1rem; color: #666; text-align: center;">
+        <p>⏳ Cargando partidos...</p>
+      </div>
+    </div>
+
+    <div id="main-view" style="display: none;">
+      <header class="participant-header">
+        <p class="eyebrow">Mis pronósticos</p>
+        <h1>Copa del Mundo 2026</h1>
+        <div class="participant-name-display" id="participant-name-display"></div>
+      </header>
+
+      <main class="layout">
+        <div id="success-message" class="success-message" style="display: none;">
+          ✅ ¡Tus pronósticos han sido guardados y sincronizados con éxito!
+        </div>
+
+        <div class="info-box">
+          <h3>📋 Instrucciones</h3>
+          <p><strong>1.</strong> Ingresa tus pronósticos para cada partido</p>
+          <p><strong>2.</strong> Haz clic en "💾 Guardar mis pronósticos" para guardar localmente</p>
+          <p><strong>3.</strong> Una vez terminado, haz clic en "📤 Enviar mis pronósticos" para enviar al administrador</p>
+          <p><strong>4.</strong> Verás un mensaje de confirmación cuando tus pronósticos sean enviados</p>
+        </div>
+
+        <div class="stats-summary">
+          <div class="stat-card">
+            <div class="stat-value" id="total-matches">0</div>
+            <div class="stat-label">Partidos en total</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="completed-predictions">0</div>
+            <div class="stat-label">Pronósticos ingresados</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="remaining-predictions">0</div>
+            <div class="stat-label">Restantes</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Mis pronósticos</h2>
+          <div id="matches-list"></div>
+          <!-- Les boutons seront ajoutés dynamiquement après les 3 journées -->
+        </div>
+      </main>
+    </div>
+
+    <input type="file" id="import-predictions-input" accept=".json" style="display: none;" />
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script src="matches-data.js"></script>
+    <script src="participant.js"></script>
+  </body>
+</html>
