@@ -878,6 +878,9 @@ function renderMatches() {
   `;
   const totalMatches = matches.length;
   
+  // ALERT POUR VÉRIFIER - À SUPPRIMER APRÈS TEST
+  alert(`NOMBRE DE MATCHS CHARGÉS: ${totalMatches}`);
+  
   // Afficher le nombre de matchs dynamiquement
   let matchesText;
   if (totalMatches <= 24) {
