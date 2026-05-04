@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TEST - Vérification compteur</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div style="max-width: 800px; margin: 50px auto; padding: 20px;">
+        <h1>🔍 TEST - Compteur de matchs</h1>
+        <div id="result" style="background: white; padding: 20px; border-radius: 8px; margin-top: 20px;">
+            <p>Chargement...</p>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        const resultDiv = document.getElementById('result');
+        
+        async function testMatchCount() {
+            try {
+                const db = firebase.database();
+                const matchesSnapshot = await db.ref('matches').once('value');
+                const matchesData = matchesSnapshot.val();
+                
+                if (!matchesData) {
+                    resultDiv.innerHTML = '<p style="color: red;">❌ Aucun match dans Firebase</p>';
+                    return;
+                }
+                
+                const matchesArray = Object.values(matchesData);
+                const count = matchesArray.length;
+                
+                // AFFICHER LE RÉSULTAT
+                resultDiv.innerHTML = `
+                    <h2 style="color: green;">✅ Résultat du test</h2>
+                    <p style="font-size: 2rem; font-weight: bold; color: #3b82f6;">
+                        ${count} matchs dans Firebase
+                    </p>
+                    <hr>
+                    <p><strong>Ce qui devrait s'afficher sur la page participant:</strong></p>
+                    <p style="font-size: 1.2rem; background: #f0f0f0; padding: 10px; border-radius: 4px;">
+                        ${count <= 72 ? `${count} partidos - Fase de grupos completa` : `${count} partidos (72 fase de grupos + ${count - 72} fase final)`}
+                    </p>
+                    <hr>
+                    <p>Premier match: ${matchesArray[0].homeTeam} vs ${matchesArray[0].awayTeam}</p>
+                    <p>Dernier match: ${matchesArray[count-1].homeTeam} vs ${matchesArray[count-1].awayTeam}</p>
+                `;
+                
+                // ALERT AUSSI
+                alert(`FIREBASE CONTIENT ${count} MATCHS`);
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<p style="color: red;">❌ Erreur: ${error.message}</p>`;
+            }
+        }
+        
+        testMatchCount();
+    </script>
+</body>
+</html>
