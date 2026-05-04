@@ -4,20 +4,9 @@ const API_KEY_STORAGE = "pronostics-api-key";
 // Variable globale pour stocker les participants qui ont envoyé des pronostics via Firebase
 let firebaseParticipants = new Set();
 
-// Charger les matchs depuis matches-data.js (fichier JavaScript partagé)
-function loadMatchesFromSharedData() {
-  if (typeof MATCHES_DATA === 'undefined') {
-    console.error("❌ MATCHES_DATA n'est pas défini. Vérifiez que matches-data.js est chargé.");
-    return [];
-  }
-  
-  console.log(`✅ ${MATCHES_DATA.matches.length} partidos cargados desde matches-data.js`);
-  return MATCHES_DATA.matches;
-}
-
 const initialData = {
   participants: [],
-  matches: [], // Les matchs seront chargés depuis matches-data.js
+  matches: [], // Les matchs seront chargés depuis Firebase
 };
 
 function withDefaultPredictions(data) {
