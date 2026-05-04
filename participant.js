@@ -877,13 +877,18 @@ function renderMatches() {
     text-align: center;
   `;
   const totalMatches = matches.length;
-  console.log(`🔍 DEBUG: Total de matchs dans le tableau matches: ${totalMatches}`);
-  console.log(`🔍 DEBUG: Premiers matchs:`, matches.slice(0, 3));
-  console.log(`🔍 DEBUG: Derniers matchs:`, matches.slice(-3));
   
-  const matchesText = totalMatches > 72
-    ? `${totalMatches} partidos (72 fase de grupos + ${totalMatches - 72} fase final)`
-    : `${totalMatches} partidos`;
+  // Afficher le nombre de matchs dynamiquement
+  let matchesText;
+  if (totalMatches <= 24) {
+    matchesText = `${totalMatches} partidos - Jornada 1`;
+  } else if (totalMatches <= 48) {
+    matchesText = `${totalMatches} partidos - Jornadas 1-2`;
+  } else if (totalMatches <= 72) {
+    matchesText = `${totalMatches} partidos - Fase de grupos completa`;
+  } else {
+    matchesText = `${totalMatches} partidos (72 fase de grupos + ${totalMatches - 72} fase final)`;
+  }
   
   mainTitle.innerHTML = `
     <h2 style="margin: 0; font-size: 1.8rem;">⚽ COPA DEL MUNDO FIFA 2026</h2>
