@@ -708,6 +708,12 @@ startBtn.addEventListener("click", async () => {
         saveData();
         showMainView();
         return;
+      } else {
+        // Le participant n'existe PAS dans Firebase
+        // Nettoyer le localStorage pour éviter de charger d'anciennes données
+        console.log("🧹 Participante no encontrado en Firebase. Limpiando localStorage...");
+        localStorage.removeItem(PARTICIPANT_STORAGE_KEY);
+        localStorage.removeItem(SENT_PREDICTIONS_KEY);
       }
     } catch (error) {
       console.warn("⚠️ Firebase no disponible, usando modo local:", error.message);
