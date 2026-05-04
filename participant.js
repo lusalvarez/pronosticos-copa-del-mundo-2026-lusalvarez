@@ -853,6 +853,10 @@ function renderMatches() {
     text-align: center;
   `;
   const totalMatches = matches.length;
+  console.log(`🔍 DEBUG: Total de matchs dans le tableau matches: ${totalMatches}`);
+  console.log(`🔍 DEBUG: Premiers matchs:`, matches.slice(0, 3));
+  console.log(`🔍 DEBUG: Derniers matchs:`, matches.slice(-3));
+  
   const matchesText = totalMatches > 72
     ? `${totalMatches} partidos (72 fase de grupos + ${totalMatches - 72} fase final)`
     : `${totalMatches} partidos`;
