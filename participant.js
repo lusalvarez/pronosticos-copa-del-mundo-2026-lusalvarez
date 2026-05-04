@@ -721,6 +721,11 @@ startBtn.addEventListener("click", async () => {
   }
 
   // Nouveau participant (ni en local, ni dans Firebase)
+  // Nettoyer complètement le localStorage pour éviter les données résiduelles
+  localStorage.removeItem(PARTICIPANT_STORAGE_KEY);
+  localStorage.removeItem(SENT_PREDICTIONS_KEY);
+  console.log("🧹 LocalStorage limpiado para nuevo participante");
+  
   participantName = name;
   participantPassword = inputPasswordHash;
   
