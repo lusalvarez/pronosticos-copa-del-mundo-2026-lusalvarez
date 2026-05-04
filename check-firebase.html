@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vérification Firebase</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .result {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .success { color: #10b981; }
+        .error { color: #ef4444; }
+        .info { color: #3b82f6; }
+        pre {
+            background: #f9fafb;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Diagnostic Firebase</h1>
+    <div id="results"></div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="firebase-config.js"></script>
+    
+    <script>
+        const resultsDiv = document.getElementById('results');
+        
+        function addResult(title, content, type = 'info') {
+            const div = document.createElement('div');
+            div.className = 'result';
+            div.innerHTML = `
+                <h2 class="${type}">${title}</h2>
+                ${content}
+            `;
+            resultsDiv.appendChild(div);
+        }
+
+        async function checkFirebase() {
+            try {
+                addResult('📡 Connexion à Firebase', '<p>Connexion en cours...</p>', 'info');
+                
+                const db = firebase.database();
+                
+                // Vérifier les matchs
+                const matchesSnapshot = await db.ref('matches').once('value');
+                const matchesData = matchesSnapshot.val();
+                
+                if (!matchesData) {
+                    addResult('⚠️ Matchs', '<p>Aucun match trouvé dans Firebase</p>', 'error');
+                } else {
+                    const matchesArray = Object.values(matchesData);
+                    const matchCount = matchesArray.length;
+                    
+                    addResult(
+                        '✅ Matchs trouvés',
+                        `
+                        <p><strong>Nombre total de matchs: ${matchCount}</strong></p>
+                        <p>Premier match: ${matchesArray[0].homeTeam} vs ${matchesArray[0].awayTeam}</p>
+                        <p>Dernier match: ${matchesArray[matchCount-1].homeTeam} vs ${matchesArray[matchCount-1].awayTeam}</p>
+                        <details>
+                            <summary>Voir tous les matchs (cliquez pour développer)</summary>
+                            <pre>${JSON.stringify(matchesArray, null, 2)}</pre>
+                        </details>
+                        `,
+                        'success'
+                    );
+                }
+                
+                // Vérifier les participants
+                const participantsSnapshot = await db.ref('participants').once('value');
+                const participantsData = participantsSnapshot.val();
+                
+                if (!participantsData) {
+                    addResult('⚠️ Participants', '<p>Aucun participant trouvé dans Firebase</p>', 'info');
+                } else {
+                    const participantsList = Object.keys(participantsData);
+                    addResult(
+                        '✅ Participants trouvés',
+                        `
+                        <p><strong>Nombre de participants: ${participantsList.length}</strong></p>
+                        <p>Participants: ${participantsList.join(', ')}</p>
+                        `,
+                        'success'
+                    );
+                }
+                
+            } catch (error) {
+                addResult('❌ Erreur', `<p>${error.message}</p><pre>${error.stack}</pre>`, 'error');
+            }
+        }
+
+        // Lancer la vérification au chargement
+        checkFirebase();
+    </script>
+</body>
+</html>
