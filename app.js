@@ -1,6 +1,9 @@
 const STORAGE_KEY = "pronostics-coupe-du-monde-v1";
 const API_KEY_STORAGE = "pronostics-api-key";
 
+// Variable globale pour stocker les participants qui ont envoyé des pronostics via Firebase
+let firebaseParticipants = new Set();
+
 // Charger les matchs depuis matches-data.js (fichier JavaScript partagé)
 function loadMatchesFromSharedData() {
   if (typeof MATCHES_DATA === 'undefined') {
@@ -633,12 +636,17 @@ function deleteMatch(matchId) {
 function renderParticipants() {
   participantsList.innerHTML = "";
 
-  if (!state.participants.length) {
-    participantsList.innerHTML = '<li>Ningún participante</li>';
+  // Filtrer les participants pour n'afficher que ceux qui ont envoyé des pronostics via Firebase
+  const validParticipants = state.participants.filter(participant =>
+    firebaseParticipants.has(participant.name.toLowerCase())
+  );
+
+  if (!validParticipants.length) {
+    participantsList.innerHTML = '<li style="color: #666; font-style: italic;">Ningún participante ha enviado pronósticos todavía</li>';
     return;
   }
 
-  state.participants.forEach((participant) => {
+  validParticipants.forEach((participant) => {
     const li = document.createElement("li");
     li.innerHTML = `
       <span>${participant.name}</span>
@@ -1102,14 +1110,23 @@ function listenToFirebaseUpdates() {
       
       if (!firebaseData) {
         console.log("ℹ️ No hay datos en Firebase todavía");
+        // Réinitialiser la liste des participants Firebase
+        firebaseParticipants.clear();
+        render();
         return;
       }
       
       console.log("📥 Datos recibidos de Firebase:", Object.keys(firebaseData).length, "participantes");
       
+      // Réinitialiser et mettre à jour la liste des participants qui ont envoyé des pronostics
+      firebaseParticipants.clear();
+      
       // Mettre à jour les prédictions pour chaque participant Firebase
       Object.values(firebaseData).forEach(participantData => {
         const participantName = participantData.participantName;
+        
+        // Ajouter ce participant à la liste des participants Firebase (qui ont envoyé des pronostics)
+        firebaseParticipants.add(participantName.toLowerCase());
         
         // Trouver ou créer le participant dans l'application admin
         let participant = state.participants.find(p =>
@@ -1133,6 +1150,8 @@ function listenToFirebaseUpdates() {
           }
         });
       });
+      
+      console.log(`📋 Participantes con pronósticos enviados: ${firebaseParticipants.size}`);
       
       // Sauvegarder et rafraîchir l'affichage
       persistState(state);
