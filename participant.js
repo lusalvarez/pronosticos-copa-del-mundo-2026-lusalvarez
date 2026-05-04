@@ -852,9 +852,14 @@ function renderMatches() {
     margin-bottom: 2rem;
     text-align: center;
   `;
+  const totalMatches = matches.length;
+  const matchesText = totalMatches > 72
+    ? `${totalMatches} partidos (72 fase de grupos + ${totalMatches - 72} fase final)`
+    : `${totalMatches} partidos`;
+  
   mainTitle.innerHTML = `
     <h2 style="margin: 0; font-size: 1.8rem;">⚽ COPA DEL MUNDO FIFA 2026</h2>
-    <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">48 equipos - 104 partidos (72 fase de grupos + 32 fase final)</p>
+    <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">48 equipos - ${matchesText}</p>
   `;
   matchesList.appendChild(mainTitle);
 
