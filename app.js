@@ -16,11 +16,7 @@ function loadMatchesFromSharedData() {
 }
 
 const initialData = {
-  participants: [
-    { id: crypto.randomUUID(), name: "Alice" },
-    { id: crypto.randomUUID(), name: "Bruno" },
-    { id: crypto.randomUUID(), name: "Chloé" },
-  ],
+  participants: [],
   matches: [], // Les matchs seront chargés depuis matches-data.js
 };
 
