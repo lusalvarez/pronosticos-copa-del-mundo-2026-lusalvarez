@@ -782,17 +782,41 @@ function groupMatchesByDay() {
   const dayGroups = [];
   let currentIndex = 0;
   
-  // Définir la structure des journées
-  const dayStructure = [
-    { name: "JORNADA 1", count: 24, stage: "Fase de grupos" },
-    { name: "JORNADA 2", count: 24, stage: "Fase de grupos" },
-    { name: "JORNADA 3", count: 24, stage: "Fase de grupos" },
-    { name: "DIECISEISAVOS DE FINAL", count: 16, stage: "Dieciseisavos de final" },
-    { name: "OCTAVOS DE FINAL", count: 8, stage: "Octavos de final" },
-    { name: "CUARTOS DE FINAL", count: 4, stage: "Cuartos de final" },
-    { name: "SEMIFINALES", count: 2, stage: "Semifinales" },
-    { name: "FINALES", count: 2, stage: "Finales" }
-  ];
+  // Définir la structure des journées en fonction du nombre total de matchs
+  const totalMatches = matches.length;
+  const dayStructure = [];
+  
+  // Phase de groupes: 3 journées de 24 matchs (72 matchs)
+  if (totalMatches >= 24) {
+    dayStructure.push({ name: "JORNADA 1", count: 24, stage: "Fase de grupos" });
+  }
+  if (totalMatches >= 48) {
+    dayStructure.push({ name: "JORNADA 2", count: 24, stage: "Fase de grupos" });
+  }
+  if (totalMatches >= 72) {
+    dayStructure.push({ name: "JORNADA 3", count: 24, stage: "Fase de grupos" });
+  }
+  
+  // Phase finale: seulement si on a plus de 72 matchs
+  if (totalMatches > 72) {
+    const remainingMatches = totalMatches - 72;
+    
+    if (remainingMatches >= 16) {
+      dayStructure.push({ name: "DIECISEISAVOS DE FINAL", count: 16, stage: "Dieciseisavos de final" });
+    }
+    if (remainingMatches >= 24) {
+      dayStructure.push({ name: "OCTAVOS DE FINAL", count: 8, stage: "Octavos de final" });
+    }
+    if (remainingMatches >= 28) {
+      dayStructure.push({ name: "CUARTOS DE FINAL", count: 4, stage: "Cuartos de final" });
+    }
+    if (remainingMatches >= 30) {
+      dayStructure.push({ name: "SEMIFINALES", count: 2, stage: "Semifinales" });
+    }
+    if (remainingMatches >= 32) {
+      dayStructure.push({ name: "FINALES", count: 2, stage: "Finales" });
+    }
+  }
   
   // Grouper les matchs selon la structure définie
   for (const dayDef of dayStructure) {
