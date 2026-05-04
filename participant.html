@@ -366,6 +366,11 @@
     <script src="firebase-config.js"></script>
     
     <!-- matches-data.js n'est plus nécessaire, on utilise Firebase -->
-    <script src="participant.js?v=4"></script>
+    <script>
+      // Force le rechargement du script avec un timestamp
+      const script = document.createElement('script');
+      script.src = 'participant.js?t=' + new Date().getTime();
+      document.body.appendChild(script);
+    </script>
   </body>
 </html>
