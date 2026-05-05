@@ -138,7 +138,9 @@ function listenToNewMatchesFromFirebase() {
           homeTeam: newMatch.homeTeam,
           awayTeam: newMatch.awayTeam,
           date: newMatch.date,
-          stage: newMatch.stage || "Fase de grupos"
+          stage: newMatch.stage || "Fase de grupos",
+          group: newMatch.group || null,
+          addedManually: newMatch.addedManually || false
         });
         
         // Initialiser une prédiction vide pour ce match
