@@ -104,7 +104,7 @@ participantForm.addEventListener("submit", (event) => {
   saveAndRender();
 });
 
-matchForm.addEventListener("submit", (event) => {
+matchForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const homeTeam = document.getElementById("home-team").value.trim();
@@ -115,22 +115,79 @@ matchForm.addEventListener("submit", (event) => {
     return;
   }
 
-  const predictions = {};
-  state.participants.forEach((participant) => {
-    predictions[participant.id] = { home: "", away: "" };
-  });
+  // Si Firebase est disponible, envoyer le match à Firebase
+  if (typeof firebase !== 'undefined' && firebase.database) {
+    try {
+      const db = firebase.database();
+      const matchesRef = db.ref('matches');
+      
+      const matchData = {
+        homeTeam: homeTeam,
+        awayTeam: awayTeam,
+        date: date,
+        stage: "Partido manual",
+        group: null,
+        addedManually: true,
+        importedAt: new Date().toISOString()
+      };
+      
+      // Ajouter à Firebase (le listener se chargera de l'affichage local)
+      await matchesRef.push(matchData);
+      
+      console.log("✅ Partido manual agregado a Firebase");
+      matchForm.reset();
+      
+      // Afficher un message de succès
+      const notification = document.createElement('div');
+      notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #10b981;
+        color: white;
+        padding: 1rem 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        z-index: 1000;
+        animation: slideIn 0.3s ease-out;
+      `;
+      notification.innerHTML = `
+        ✅ <strong>Partido agregado:</strong><br>
+        ${homeTeam} vs ${awayTeam}<br>
+        <small>Sincronizado con Firebase</small>
+      `;
+      document.body.appendChild(notification);
+      
+      setTimeout(() => {
+        notification.style.animation = 'slideOut 0.3s ease-in';
+        setTimeout(() => notification.remove(), 300);
+      }, 3000);
+      
+    } catch (error) {
+      console.error("❌ Error al agregar partido a Firebase:", error);
+      alert(`❌ Error al agregar el partido.\n\nError: ${error.message}`);
+    }
+  } else {
+    // Fallback: ajout local uniquement si Firebase n'est pas disponible
+    const predictions = {};
+    state.participants.forEach((participant) => {
+      predictions[participant.id] = { home: "", away: "" };
+    });
 
-  state.matches.push({
-    id: crypto.randomUUID(),
-    homeTeam,
-    awayTeam,
-    date,
-    actualScore: { home: null, away: null },
-    predictions,
-  });
+    state.matches.push({
+      id: crypto.randomUUID(),
+      homeTeam,
+      awayTeam,
+      date,
+      actualScore: { home: null, away: null },
+      predictions,
+    });
 
-  matchForm.reset();
-  saveAndRender();
+    matchForm.reset();
+    saveAndRender();
+    
+    alert("⚠️ Partido agregado localmente.\n\nFirebase no está disponible. Los participantes no verán este partido.");
+  }
 });
 
 importMatchesBtn.addEventListener("click", () => {
