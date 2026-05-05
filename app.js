@@ -458,10 +458,13 @@ function groupMatchesByDay(matches) {
   
   // Ajouter les matchs manuels comme un groupe séparé à la fin
   if (manualMatches.length > 0) {
+    // Trier les matchs manuels par date croissante
+    manualMatches.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
     dayGroups.push({
-      name: "PARTIDOS FUERA DE LA COPA DEL MUNDO",
+      name: "JORNADA EXTRA",
       matches: manualMatches,
-      stage: "Partidos manuales",
+      stage: "Jornada extra",
       date: manualMatches[0].date,
       isManual: true
     });
