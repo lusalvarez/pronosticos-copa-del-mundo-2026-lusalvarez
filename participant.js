@@ -946,7 +946,9 @@ function renderMatches() {
   dayGroups.forEach((dayGroup, dayIndex) => {
     const dayName = dayGroup.name || `JORNADA ${dayIndex + 1}`;
     const totalMatches = dayGroup.matches.length;
-    const isLocked = isDayLocked(dayGroup.matches);
+    
+    // Pour les matchs manuels, ne pas appliquer le verrouillage par journée
+    const isLocked = dayGroup.isManual ? false : isDayLocked(dayGroup.matches);
     const firstMatchDate = new Date(dayGroup.matches[0].date);
     const deadline = new Date(firstMatchDate.getTime() - (24 * 60 * 60 * 1000));
     
@@ -1002,37 +1004,56 @@ function renderMatches() {
     `;
     daySection.appendChild(dayHeader);
     
-    // Avertissement de délai
-    const warningBox = document.createElement("div");
-    warningBox.style.cssText = `
-      padding: 1rem 1.5rem;
-      background: ${isLocked ? '#fee2e2' : '#dbeafe'};
-      border-bottom: 1px solid ${isLocked ? '#fecaca' : '#bfdbfe'};
-    `;
-    
-    if (isLocked) {
-      warningBox.innerHTML = `
-        <p style="margin: 0; color: #991b1b; font-weight: bold;">
-          ⚠️ JORNADA CERRADA - Los pronósticos para esta jornada ya no pueden ser modificados
-        </p>
-        <p style="margin: 0.5rem 0 0 0; color: #7f1d1d; font-size: 0.9rem;">
-          La fecha límite era: ${formatDate(deadline.toISOString())}
-        </p>
+    // Avertissement de délai (seulement pour les matchs de la Coupe du Monde)
+    if (!dayGroup.isManual) {
+      const warningBox = document.createElement("div");
+      warningBox.style.cssText = `
+        padding: 1rem 1.5rem;
+        background: ${isLocked ? '#fee2e2' : '#dbeafe'};
+        border-bottom: 1px solid ${isLocked ? '#fecaca' : '#bfdbfe'};
       `;
+      
+      if (isLocked) {
+        warningBox.innerHTML = `
+          <p style="margin: 0; color: #991b1b; font-weight: bold;">
+            ⚠️ JORNADA CERRADA - Los pronósticos para esta jornada ya no pueden ser modificados
+          </p>
+          <p style="margin: 0.5rem 0 0 0; color: #7f1d1d; font-size: 0.9rem;">
+            La fecha límite era: ${formatDate(deadline.toISOString())}
+          </p>
+        `;
+      } else {
+        warningBox.innerHTML = `
+          <p style="margin: 0; color: #1e40af; font-weight: bold;">
+            ⏰ Fecha límite para enviar pronósticos de esta jornada:
+          </p>
+          <p style="margin: 0.5rem 0 0 0; color: #1e3a8a; font-size: 0.95rem;">
+            ${formatDate(deadline.toISOString())}
+          </p>
+          <p style="margin: 0.5rem 0 0 0; color: #1e3a8a; font-size: 0.85rem; font-style: italic;">
+            (24 horas antes del primer partido de la jornada)
+          </p>
+        `;
+      }
+      daySection.appendChild(warningBox);
     } else {
-      warningBox.innerHTML = `
-        <p style="margin: 0; color: #1e40af; font-weight: bold;">
-          ⏰ Fecha límite para enviar pronósticos de esta jornada:
+      // Pour les matchs manuels, afficher un message différent
+      const infoBox = document.createElement("div");
+      infoBox.style.cssText = `
+        padding: 1rem 1.5rem;
+        background: #f0fdf4;
+        border-bottom: 1px solid #bbf7d0;
+      `;
+      infoBox.innerHTML = `
+        <p style="margin: 0; color: #166534; font-weight: bold;">
+          ⚽ Partidos adicionales - Puedes hacer tus pronósticos en cualquier momento
         </p>
-        <p style="margin: 0.5rem 0 0 0; color: #1e3a8a; font-size: 0.95rem;">
-          ${formatDate(deadline.toISOString())}
-        </p>
-        <p style="margin: 0.5rem 0 0 0; color: #1e3a8a; font-size: 0.85rem; font-style: italic;">
-          (24 horas antes del primer partido de la jornada)
+        <p style="margin: 0.5rem 0 0 0; color: #15803d; font-size: 0.9rem;">
+          Estos partidos fueron agregados manualmente por el administrador
         </p>
       `;
+      daySection.appendChild(infoBox);
     }
-    daySection.appendChild(warningBox);
     
     // Conteneur des matchs
     const matchesContainer = document.createElement("div");
