@@ -689,13 +689,25 @@ async function editMatchTeams(match) {
   }
 }
 
-function deleteMatch(matchId) {
+async function deleteMatch(matchId) {
   if (!confirm("¿Estás seguro de que deseas eliminar este partido? Todos los pronósticos asociados también serán eliminados.")) {
     return;
   }
 
-  // Supprimer le match de la liste
+  // Supprimer le match de la liste locale
   state.matches = state.matches.filter((m) => m.id !== matchId);
+
+  // Supprimer de Firebase si disponible
+  if (typeof firebase !== 'undefined' && firebase.database) {
+    try {
+      const db = firebase.database();
+      await db.ref('matches/' + matchId).remove();
+      console.log(`✅ Partido ${matchId} eliminado de Firebase`);
+    } catch (error) {
+      console.error("❌ Error al eliminar partido de Firebase:", error);
+      alert(`⚠️ El partido fue eliminado localmente pero hubo un error con Firebase.\n\nError: ${error.message}`);
+    }
+  }
 
   saveAndRender();
 }
