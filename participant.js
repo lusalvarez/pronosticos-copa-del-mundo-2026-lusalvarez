@@ -582,12 +582,12 @@ function showConfirmationModal(dayGroup, dayPredictions, completedCount, totalCo
     const isEmpty = !pred || pred.home === "" || pred.away === "";
     
     tableHTML += `
-      <div style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; ${isEmpty ? 'background: #fef2f2;' : ''}">
+      <div style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; ${isEmpty ? 'background: #fee2e2;' : 'background: #f0fdf4;'}">
         <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem; align-items: center; font-size: 0.9rem;">
-          <div style="font-weight: 500;">
+          <div style="font-weight: 500; color: #1f2937;">
             ${match.homeTeam} vs ${match.awayTeam}
           </div>
-          <div style="text-align: center; font-weight: bold; ${isEmpty ? 'color: #dc2626;' : 'color: #059669;'}">
+          <div style="text-align: center; font-weight: bold; font-size: 1.1rem; ${isEmpty ? 'color: #991b1b;' : 'color: #065f46;'}">
             ${isEmpty ? '❌ Vacío' : `${pred.home} - ${pred.away}`}
           </div>
         </div>
