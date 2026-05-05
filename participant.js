@@ -72,7 +72,8 @@ function loadMatchesFromSharedData() {
         awayTeam: matchData.awayTeam,
         date: matchData.date,
         stage: matchData.stage,
-        group: matchData.group || null
+        group: matchData.group || null,
+        addedManually: matchData.addedManually || false
       }));
       
       console.log(`✅ ${matches.length} partidos cargados desde Firebase`);
@@ -791,26 +792,38 @@ function formatDate(dateString) {
 // Finales: 1 journée de 2 matchs (petite finale + finale)
 function groupMatchesByDay() {
   const dayGroups = [];
-  let currentIndex = 0;
   
-  // Définir la structure des journées en fonction du nombre total de matchs
-  const totalMatches = matches.length;
+  // Séparer les matchs manuels des matchs de la Coupe du Monde
+  const worldCupMatches = [];
+  const manualMatches = [];
+  
+  matches.forEach((match, index) => {
+    if (match.stage === "Partido manual" || match.addedManually === true) {
+      manualMatches.push({ ...match, originalIndex: index });
+    } else {
+      worldCupMatches.push({ ...match, originalIndex: index });
+    }
+  });
+  
+  // Grouper les matchs de la Coupe du Monde par journée
+  let currentIndex = 0;
+  const totalWorldCupMatches = worldCupMatches.length;
   const dayStructure = [];
   
   // Phase de groupes: 3 journées de 24 matchs (72 matchs)
-  if (totalMatches >= 24) {
+  if (totalWorldCupMatches >= 24) {
     dayStructure.push({ name: "JORNADA 1", count: 24, stage: "Fase de grupos" });
   }
-  if (totalMatches >= 48) {
+  if (totalWorldCupMatches >= 48) {
     dayStructure.push({ name: "JORNADA 2", count: 24, stage: "Fase de grupos" });
   }
-  if (totalMatches >= 72) {
+  if (totalWorldCupMatches >= 72) {
     dayStructure.push({ name: "JORNADA 3", count: 24, stage: "Fase de grupos" });
   }
   
   // Phase finale: seulement si on a plus de 72 matchs
-  if (totalMatches > 72) {
-    const remainingMatches = totalMatches - 72;
+  if (totalWorldCupMatches > 72) {
+    const remainingMatches = totalWorldCupMatches - 72;
     
     if (remainingMatches >= 16) {
       dayStructure.push({ name: "DIECISEISAVOS DE FINAL", count: 16, stage: "Dieciseisavos de final" });
@@ -829,22 +842,31 @@ function groupMatchesByDay() {
     }
   }
   
-  // Grouper les matchs selon la structure définie
+  // Grouper les matchs de la Coupe du Monde selon la structure définie
   for (const dayDef of dayStructure) {
-    const dayMatches = matches.slice(currentIndex, currentIndex + dayDef.count).map((match, idx) => ({
-      ...match,
-      originalIndex: currentIndex + idx
-    }));
+    const dayMatches = worldCupMatches.slice(currentIndex, currentIndex + dayDef.count);
     
     if (dayMatches.length > 0) {
       dayGroups.push({
         name: dayDef.name,
         matches: dayMatches,
         stage: dayDef.stage,
-        date: dayMatches[0].date
+        date: dayMatches[0].date,
+        isWorldCup: true
       });
       currentIndex += dayDef.count;
     }
+  }
+  
+  // Ajouter les matchs manuels comme un groupe séparé à la fin
+  if (manualMatches.length > 0) {
+    dayGroups.push({
+      name: "PARTIDOS FUERA DE LA COPA DEL MUNDO",
+      matches: manualMatches,
+      stage: "Partidos manuales",
+      date: manualMatches[0].date,
+      isManual: true
+    });
   }
   
   return dayGroups;

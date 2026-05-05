@@ -407,6 +407,19 @@ function formatDate(value) {
 // Finales: 1 journée de 2 matchs (petite finale + finale)
 function groupMatchesByDay(matches) {
   const dayGroups = [];
+  
+  // Séparer les matchs manuels des matchs de la Coupe du Monde
+  const worldCupMatches = [];
+  const manualMatches = [];
+  
+  matches.forEach((match, index) => {
+    if (match.stage === "Partido manual" || match.addedManually === true) {
+      manualMatches.push({ ...match, originalIndex: index });
+    } else {
+      worldCupMatches.push({ ...match, originalIndex: index });
+    }
+  });
+  
   let currentIndex = 0;
   
   // Définir la structure des journées
@@ -421,17 +434,14 @@ function groupMatchesByDay(matches) {
     { name: "FINALES", count: 2, stage: "Finales" }
   ];
   
-  // Grouper les matchs selon la structure définie
+  // Grouper les matchs de la Coupe du Monde selon la structure définie
   for (const dayDef of dayStructure) {
     // Vérifier s'il reste assez de matchs pour cette journée
-    if (currentIndex >= matches.length) {
+    if (currentIndex >= worldCupMatches.length) {
       break; // Plus de matchs disponibles, arrêter
     }
     
-    const dayMatches = matches.slice(currentIndex, currentIndex + dayDef.count).map((match, idx) => ({
-      ...match,
-      originalIndex: currentIndex + idx
-    }));
+    const dayMatches = worldCupMatches.slice(currentIndex, currentIndex + dayDef.count);
     
     // Ajouter seulement si on a des matchs
     if (dayMatches.length > 0) {
@@ -439,10 +449,22 @@ function groupMatchesByDay(matches) {
         name: dayDef.name,
         matches: dayMatches,
         stage: dayDef.stage,
-        date: dayMatches[0].date
+        date: dayMatches[0].date,
+        isWorldCup: true
       });
       currentIndex += dayMatches.length; // Avancer du nombre réel de matchs ajoutés
     }
+  }
+  
+  // Ajouter les matchs manuels comme un groupe séparé à la fin
+  if (manualMatches.length > 0) {
+    dayGroups.push({
+      name: "PARTIDOS FUERA DE LA COPA DEL MUNDO",
+      matches: manualMatches,
+      stage: "Partidos manuales",
+      date: manualMatches[0].date,
+      isManual: true
+    });
   }
   
   return dayGroups;
@@ -1125,6 +1147,7 @@ function listenToFirebaseUpdates() {
         date: matchData.date,
         stage: matchData.stage,
         group: matchData.group || null,
+        addedManually: matchData.addedManually || false,
         actualScore: { home: null, away: null },
         predictions: {}
       }));
