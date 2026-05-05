@@ -899,14 +899,19 @@ function isDayLocked(dayMatches) {
 function renderMatches() {
   matchesList.innerHTML = "";
 
-  // Grouper les matchs par journée (sépare automatiquement manuels et Coupe du Monde)
-  const dayGroups = groupMatchesByDay();
-  
-  // Si aucun match du tout (ni Coupe du Monde, ni manuels)
+  // Si aucun match du tout
   if (matches.length === 0) {
     matchesList.innerHTML = '<p class="empty-state">No hay partidos disponibles.</p>';
     return;
   }
+
+  // Grouper les matchs par journée (sépare automatiquement manuels et Coupe du Monde)
+  const dayGroups = groupMatchesByDay();
+  
+  console.log("📊 Grupos de jornadas:", dayGroups.length);
+  dayGroups.forEach((group, idx) => {
+    console.log(`  Grupo ${idx}: ${group.name}, ${group.matches.length} partidos, isManual: ${group.isManual}`);
+  });
 
   // Vérifier s'il y a des matchs de la Coupe du Monde
   const hasWorldCupMatches = dayGroups.some(group => group.isWorldCup);
@@ -946,11 +951,19 @@ function renderMatches() {
   }
   
   dayGroups.forEach((dayGroup, dayIndex) => {
+    console.log(`🔄 Renderizando grupo ${dayIndex}: ${dayGroup.name}`);
+    
     const dayName = dayGroup.name || `JORNADA ${dayIndex + 1}`;
     const totalMatches = dayGroup.matches.length;
     
     // Pour les matchs manuels, ne pas appliquer le verrouillage par journée
     const isLocked = dayGroup.isManual ? false : isDayLocked(dayGroup.matches);
+    
+    if (!dayGroup.matches[0]) {
+      console.error("❌ Error: No hay partidos en el grupo", dayGroup);
+      return;
+    }
+    
     const firstMatchDate = new Date(dayGroup.matches[0].date);
     const deadline = new Date(firstMatchDate.getTime() - (24 * 60 * 60 * 1000));
     
