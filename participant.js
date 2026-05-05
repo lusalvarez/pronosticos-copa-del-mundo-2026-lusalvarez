@@ -897,43 +897,51 @@ function isDayLocked(dayMatches) {
 function renderMatches() {
   matchesList.innerHTML = "";
 
+  // Grouper les matchs par journée (sépare automatiquement manuels et Coupe du Monde)
+  const dayGroups = groupMatchesByDay();
+  
+  // Si aucun match du tout (ni Coupe du Monde, ni manuels)
   if (matches.length === 0) {
     matchesList.innerHTML = '<p class="empty-state">No hay partidos disponibles.</p>';
     return;
   }
 
-  // Titre principal
-  const mainTitle = document.createElement("div");
-  mainTitle.style.cssText = `
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    margin-bottom: 2rem;
-    text-align: center;
-  `;
-  const totalMatches = matches.length;
+  // Vérifier s'il y a des matchs de la Coupe du Monde
+  const hasWorldCupMatches = dayGroups.some(group => group.isWorldCup);
   
-  // Afficher le nombre de matchs dynamiquement
-  let matchesText;
-  if (totalMatches <= 24) {
-    matchesText = `${totalMatches} partidos - Jornada 1`;
-  } else if (totalMatches <= 48) {
-    matchesText = `${totalMatches} partidos - Jornadas 1-2`;
-  } else if (totalMatches <= 72) {
-    matchesText = `${totalMatches} partidos - Fase de grupos completa`;
-  } else {
-    matchesText = `${totalMatches} partidos (72 fase de grupos + ${totalMatches - 72} fase final)`;
+  // Afficher le titre principal seulement s'il y a des matchs de la Coupe du Monde
+  if (hasWorldCupMatches) {
+    const mainTitle = document.createElement("div");
+    mainTitle.style.cssText = `
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      text-align: center;
+    `;
+    
+    // Compter uniquement les matchs de la Coupe du Monde
+    const worldCupMatchCount = matches.filter(m => m.stage !== "Partido manual" && !m.addedManually).length;
+    
+    // Afficher le nombre de matchs dynamiquement
+    let matchesText;
+    if (worldCupMatchCount <= 24) {
+      matchesText = `${worldCupMatchCount} partidos - Jornada 1`;
+    } else if (worldCupMatchCount <= 48) {
+      matchesText = `${worldCupMatchCount} partidos - Jornadas 1-2`;
+    } else if (worldCupMatchCount <= 72) {
+      matchesText = `${worldCupMatchCount} partidos - Fase de grupos completa`;
+    } else {
+      matchesText = `${worldCupMatchCount} partidos (72 fase de grupos + ${worldCupMatchCount - 72} fase final)`;
+    }
+    
+    mainTitle.innerHTML = `
+      <h2 style="margin: 0; font-size: 1.8rem;">⚽ COPA DEL MUNDO FIFA 2026</h2>
+      <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">48 equipos - ${matchesText}</p>
+    `;
+    matchesList.appendChild(mainTitle);
   }
-  
-  mainTitle.innerHTML = `
-    <h2 style="margin: 0; font-size: 1.8rem;">⚽ COPA DEL MUNDO FIFA 2026</h2>
-    <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">48 equipos - ${matchesText}</p>
-  `;
-  matchesList.appendChild(mainTitle);
-
-  // Grouper les matchs par journée
-  const dayGroups = groupMatchesByDay();
   
   dayGroups.forEach((dayGroup, dayIndex) => {
     const dayName = dayGroup.name || `JORNADA ${dayIndex + 1}`;

@@ -730,35 +730,43 @@ function renderParticipants() {
 function renderAdminMatches() {
   adminMatches.innerHTML = "";
 
+  // Grouper les matchs par journée (sépare automatiquement manuels et Coupe du Monde)
+  const dayGroups = groupMatchesByDay(state.matches);
+  
+  // Si aucun match du tout (ni Coupe du Monde, ni manuels)
   if (!state.matches.length) {
     adminMatches.innerHTML = '<p class="empty-state">Ningún partido registrado.</p>';
     return;
   }
 
-  // Titre principal
-  const mainTitle = document.createElement("div");
-  mainTitle.style.cssText = `
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    padding: 1.5rem;
-    border-radius: 12px;
-    margin-bottom: 2rem;
-    text-align: center;
-  `;
-  const totalMatches = state.matches.length;
-  const titleText = totalMatches > 72 ? "COPA DEL MUNDO FIFA 2026" : "FASE DE GRUPOS";
-  const subtitleText = totalMatches > 72
-    ? `48 equipos - 12 grupos de 4 equipos + fase final - ${totalMatches} partidos`
-    : "48 equipos - 12 grupos de 4 equipos - 72 partidos";
+  // Vérifier s'il y a des matchs de la Coupe du Monde
+  const hasWorldCupMatches = dayGroups.some(group => group.isWorldCup);
   
-  mainTitle.innerHTML = `
-    <h2 style="margin: 0; font-size: 1.8rem;">⚽ ${titleText}</h2>
-    <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">${subtitleText}</p>
-  `;
-  adminMatches.appendChild(mainTitle);
-
-  // Grouper les matchs par journée
-  const dayGroups = groupMatchesByDay(state.matches);
+  // Afficher le titre principal seulement s'il y a des matchs de la Coupe du Monde
+  if (hasWorldCupMatches) {
+    const mainTitle = document.createElement("div");
+    mainTitle.style.cssText = `
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-bottom: 2rem;
+      text-align: center;
+    `;
+    
+    // Compter uniquement les matchs de la Coupe du Monde
+    const worldCupMatchCount = state.matches.filter(m => m.stage !== "Partido manual" && !m.addedManually).length;
+    const titleText = worldCupMatchCount > 72 ? "COPA DEL MUNDO FIFA 2026" : "FASE DE GRUPOS";
+    const subtitleText = worldCupMatchCount > 72
+      ? `48 equipos - 12 grupos de 4 equipos + fase final - ${worldCupMatchCount} partidos`
+      : "48 equipos - 12 grupos de 4 equipos - 72 partidos";
+    
+    mainTitle.innerHTML = `
+      <h2 style="margin: 0; font-size: 1.8rem;">⚽ ${titleText}</h2>
+      <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">${subtitleText}</p>
+    `;
+    adminMatches.appendChild(mainTitle);
+  }
   
   dayGroups.forEach((dayGroup, dayIndex) => {
     const dayName = dayGroup.name || `JORNADA ${dayIndex + 1}`;
