@@ -485,6 +485,202 @@ function sendToFirebase() {
   }
 }
 
+// Afficher une modal de confirmation avec récapitulatif des pronostics
+function showConfirmationModal(dayGroup, dayPredictions, completedCount, totalCount, dayIndex) {
+  // Créer la modal
+  const modal = document.createElement('div');
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 1rem;
+    overflow-y: auto;
+  `;
+  
+  // Créer le contenu de la modal
+  const modalContent = document.createElement('div');
+  modalContent.style.cssText = `
+    background: white;
+    border-radius: 12px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  `;
+  
+  // En-tête
+  const header = document.createElement('div');
+  header.style.cssText = `
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    border-radius: 12px 12px 0 0;
+    text-align: center;
+  `;
+  header.innerHTML = `
+    <h2 style="margin: 0; font-size: 1.5rem;">📤 Confirmar envío de pronósticos</h2>
+    <p style="margin: 0.5rem 0 0 0; opacity: 0.9;">${dayGroup.name}</p>
+  `;
+  modalContent.appendChild(header);
+  
+  // Corps avec le tableau récapitulatif
+  const body = document.createElement('div');
+  body.style.cssText = `
+    padding: 1.5rem;
+  `;
+  
+  // Message d'avertissement si incomplet
+  if (completedCount < totalCount) {
+    const warning = document.createElement('div');
+    warning.style.cssText = `
+      background: #fef3c7;
+      border: 2px solid #f59e0b;
+      border-radius: 8px;
+      padding: 1rem;
+      margin-bottom: 1rem;
+    `;
+    warning.innerHTML = `
+      <p style="margin: 0; color: #92400e; font-weight: bold;">
+        ⚠️ Atención: Solo has completado ${completedCount} de ${totalCount} pronósticos
+      </p>
+      <p style="margin: 0.5rem 0 0 0; color: #78350f; font-size: 0.9rem;">
+        Los pronósticos incompletos se enviarán vacíos
+      </p>
+    `;
+    body.appendChild(warning);
+  }
+  
+  // Tableau récapitulatif
+  const table = document.createElement('div');
+  table.style.cssText = `
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  `;
+  
+  let tableHTML = `
+    <div style="background: #f3f4f6; padding: 0.75rem; font-weight: bold; border-bottom: 2px solid #d1d5db;">
+      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem; font-size: 0.9rem;">
+        <div>Partido</div>
+        <div style="text-align: center;">Pronóstico</div>
+      </div>
+    </div>
+  `;
+  
+  dayGroup.matches.forEach(match => {
+    const index = match.originalIndex;
+    const pred = dayPredictions[index];
+    const isEmpty = !pred || pred.home === "" || pred.away === "";
+    
+    tableHTML += `
+      <div style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; ${isEmpty ? 'background: #fef2f2;' : ''}">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem; align-items: center; font-size: 0.9rem;">
+          <div style="font-weight: 500;">
+            ${match.homeTeam} vs ${match.awayTeam}
+          </div>
+          <div style="text-align: center; font-weight: bold; ${isEmpty ? 'color: #dc2626;' : 'color: #059669;'}">
+            ${isEmpty ? '❌ Vacío' : `${pred.home} - ${pred.away}`}
+          </div>
+        </div>
+      </div>
+    `;
+  });
+  
+  table.innerHTML = tableHTML;
+  body.appendChild(table);
+  
+  // Résumé
+  const summary = document.createElement('div');
+  summary.style.cssText = `
+    background: #f0fdf4;
+    border: 1px solid #86efac;
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  `;
+  summary.innerHTML = `
+    <p style="margin: 0; color: #166534; font-weight: bold;">
+      ✅ Pronósticos completados: ${completedCount} / ${totalCount}
+    </p>
+  `;
+  body.appendChild(summary);
+  
+  modalContent.appendChild(body);
+  
+  // Pied avec boutons
+  const footer = document.createElement('div');
+  footer.style.cssText = `
+    padding: 1rem 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+  `;
+  
+  const cancelBtn = document.createElement('button');
+  cancelBtn.textContent = '❌ Cancelar';
+  cancelBtn.style.cssText = `
+    padding: 0.75rem 1.5rem;
+    background: #6b7280;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+  `;
+  cancelBtn.addEventListener('click', () => {
+    document.body.removeChild(modal);
+  });
+  
+  const confirmBtn = document.createElement('button');
+  confirmBtn.textContent = '✅ Enviar pronósticos';
+  confirmBtn.style.cssText = `
+    padding: 0.75rem 1.5rem;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+  `;
+  confirmBtn.addEventListener('click', () => {
+    document.body.removeChild(modal);
+    
+    // IMPORTANT: Sauvegarder d'abord localement avant d'envoyer
+    console.log("💾 Guardando pronósticos localmente antes de enviar...");
+    saveData();
+    
+    // Envoyer les pronostics de cette journée
+    console.log(`📤 Enviando pronósticos de la Jornada ${dayIndex + 1}:`, dayPredictions);
+    sendToFirebaseWithValidation(dayPredictions, dayIndex);
+  });
+  
+  footer.appendChild(cancelBtn);
+  footer.appendChild(confirmBtn);
+  modalContent.appendChild(footer);
+  
+  modal.appendChild(modalContent);
+  document.body.appendChild(modal);
+  
+  // Fermer en cliquant sur le fond
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      document.body.removeChild(modal);
+    }
+  });
+}
+
 // Envoyer vers Firebase avec validation des journées
 function sendToFirebaseWithValidation(validPredictions, dayIndex) {
   // Vérifier que Firebase est initialisé
@@ -1184,7 +1380,7 @@ function renderMatches() {
       const currentDayGroup = dayGroups[currentDayIndex];
       
       // Vérifier si cette journée est verrouillée
-      const isCurrentDayLocked = isDayLocked(currentDayGroup.matches);
+      const isCurrentDayLocked = dayGroup.isManual ? false : isDayLocked(currentDayGroup.matches);
       
       if (isCurrentDayLocked) {
         alert(
@@ -1213,23 +1409,8 @@ function renderMatches() {
         }
       });
       
-      // Afficher un avertissement si tous les pronostics ne sont pas remplis
-      if (completedCount < totalCount) {
-        const confirm = window.confirm(
-          `⚠️ Atención: Solo has completado ${completedCount} de ${totalCount} pronósticos para la Jornada ${currentDayIndex + 1}.\n\n` +
-          "Los pronósticos incompletos se enviarán vacíos.\n\n" +
-          "¿Deseas enviar de todos modos?"
-        );
-        if (!confirm) return;
-      }
-      
-      // IMPORTANT: Sauvegarder d'abord localement avant d'envoyer
-      console.log("💾 Guardando pronósticos localmente antes de enviar...");
-      saveData();
-      
-      // Envoyer les pronostics de cette journée
-      console.log(`📤 Enviando pronósticos de la Jornada ${currentDayIndex + 1}:`, dayPredictions);
-      sendToFirebaseWithValidation(dayPredictions, currentDayIndex);
+      // Afficher la modal de confirmation avec récapitulatif
+      showConfirmationModal(currentDayGroup, dayPredictions, completedCount, totalCount, currentDayIndex);
     });
     
     resetBtnDay.addEventListener("click", () => {
