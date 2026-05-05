@@ -795,60 +795,7 @@ startBtn.addEventListener("click", async () => {
 
   const inputPasswordHash = hashPassword(password);
 
-  // Vérifier d'abord dans localStorage (mode local)
-  const saved = localStorage.getItem(PARTICIPANT_STORAGE_KEY);
-  if (saved) {
-    try {
-      const data = JSON.parse(saved);
-      if (data.participantName && data.participantName.toLowerCase() === name.toLowerCase()) {
-        // Le participant existe en local, vérifier le mot de passe
-        if (data.participantPassword !== inputPasswordHash) {
-          alert("❌ Contraseña incorrecta para este participante.\n\nSi olvidaste tu contraseña, reinicia la aplicación con el botón 'Reiniciar'.");
-          return;
-        }
-        
-        // Mot de passe correct
-        participantName = data.participantName;
-        participantPassword = data.participantPassword;
-        
-        // Vérifier si le nombre de matchs correspond
-        const savedPredictionsCount = Object.keys(data.predictions || {}).length;
-        if (savedPredictionsCount !== matches.length) {
-          console.log(`⚠️ Número de partidos cambió (${savedPredictionsCount} → ${matches.length}). Reiniciando pronósticos.`);
-          // Réinitialiser les prédictions si le nombre de matchs a changé
-          predictions = {};
-          sentPredictions = {};
-          matches.forEach((match, index) => {
-            predictions[index] = { home: "", away: "" };
-          });
-          // Nettoyer le localStorage
-          localStorage.removeItem(PARTICIPANT_STORAGE_KEY);
-          localStorage.removeItem(SENT_PREDICTIONS_KEY);
-          console.log("🧹 LocalStorage y contadores limpiados");
-        } else {
-          // Charger les données existantes
-          predictions = data.predictions || {};
-          
-          // Initialiser les prédictions manquantes
-          matches.forEach((match, index) => {
-            if (!predictions[index]) {
-              predictions[index] = { home: "", away: "" };
-            }
-          });
-          
-          // Charger les compteurs de pronostics envoyés
-          loadSentPredictions();
-        }
-        
-        showMainView();
-        return;
-      }
-    } catch (error) {
-      console.error("Error al cargar datos locales:", error);
-    }
-  }
-
-  // Vérifier dans Firebase si disponible
+  // Vérifier d'abord dans Firebase si disponible (priorité à Firebase)
   if (typeof firebase !== 'undefined' && firebase.database) {
     try {
       const db = firebase.database();
