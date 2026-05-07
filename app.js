@@ -1106,9 +1106,14 @@ function renderRanking() {
 
 // Générer un récapitulatif WhatsApp pour une journée
 function generateWhatsAppSummary(dayIndex = 0) {
+  console.log("🔍 generateWhatsAppSummary appelée avec dayIndex:", dayIndex);
+  console.log("📊 state.matches:", state.matches.length, "matchs");
+  
   const dayGroups = groupMatchesByDay(state.matches);
+  console.log("📅 dayGroups:", dayGroups.length, "journées");
   
   if (dayIndex >= dayGroups.length) {
+    console.error("❌ dayIndex", dayIndex, ">=", dayGroups.length);
     alert("❌ Journée invalide");
     return null;
   }
@@ -1194,9 +1199,15 @@ function generateWhatsAppSummary(dayIndex = 0) {
 
 // Copier le récapitulatif WhatsApp dans le presse-papiers
 function copyWhatsAppSummary(dayIndex = 0) {
-  const text = generateWhatsAppSummary(dayIndex);
+  console.log("🔍 copyWhatsAppSummary appelée avec dayIndex:", dayIndex);
   
-  if (!text) return;
+  const text = generateWhatsAppSummary(dayIndex);
+  console.log("📝 Texte généré:", text ? "OK (" + text.length + " caractères)" : "VIDE");
+  
+  if (!text) {
+    console.error("❌ Pas de texte généré");
+    return;
+  }
   
   // Copier dans le presse-papiers
   navigator.clipboard.writeText(text).then(() => {
