@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Consulta - Pronósticos Copa del Mundo</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="page-header">
+      <div>
+        <p class="eyebrow">Consulta pública</p>
+        <h1>Copa del Mundo de fútbol</h1>
+        <p class="subtitle">
+          Clasificación general y pronósticos de todos los participantes.
+        </p>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section id="public-view" class="view active">
+        <div class="panel">
+          <h2>Clasificación general</h2>
+          <div id="ranking-table"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Pronósticos por partido</h2>
+          <div id="public-matches" class="cards"></div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+
+    <!-- Configuration Firebase -->
+    <script>
+      const firebaseConfig = {
+        apiKey: "AIzaSyDGCGUKeyB_Ql0eFHxLXqH_Ql0eFHxLXqH",
+        authDomain: "pronosticos-copa-mundial.firebaseapp.com",
+        databaseURL: "https://pronosticos-copa-mundial-default-rtdb.firebaseio.com",
+        projectId: "pronosticos-copa-mundial",
+        storageBucket: "pronosticos-copa-mundial.appspot.com",
+        messagingSenderId: "123456789012",
+        appId: "1:123456789012:web:abcdef1234567890abcdef"
+      };
+
+      // Initialiser Firebase
+      firebase.initializeApp(firebaseConfig);
+    </script>
+
+    <!-- Script dédié pour la consultation -->
+    <script src="consulta.js"></script>
+  </body>
+</html>

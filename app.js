@@ -1,6 +1,9 @@
 const STORAGE_KEY = "pronostics-coupe-du-monde-v1";
 const API_KEY_STORAGE = "pronostics-api-key";
 
+// Détecter si on est sur la page de consultation publique
+const isConsultaPage = window.location.pathname.includes('consulta.html');
+
 // Variable globale pour stocker les participants qui ont envoyé des pronostics via Firebase
 let firebaseParticipants = new Set();
 
@@ -83,11 +86,14 @@ const importMatchesBtn = document.getElementById("import-matches-btn");
 const fileInput = document.getElementById("file-input");
 const deleteAllMatchesBtn = document.getElementById("delete-all-matches-btn");
 
-tabButtons.forEach((button) => {
-  button.addEventListener("click", () => switchView(button.dataset.view));
-});
+// Initialiser les événements admin uniquement si on n'est pas sur la page de consultation
+if (!isConsultaPage) {
+  tabButtons.forEach((button) => {
+    button.addEventListener("click", () => switchView(button.dataset.view));
+  });
 
-participantForm.addEventListener("submit", (event) => {
+  if (participantForm) {
+    participantForm.addEventListener("submit", (event) => {
   event.preventDefault();
   const name = participantNameInput.value.trim();
 
@@ -106,10 +112,12 @@ participantForm.addEventListener("submit", (event) => {
   });
 
   participantForm.reset();
-  saveAndRender();
-});
+      saveAndRender();
+    });
+  }
 
-matchForm.addEventListener("submit", async (event) => {
+  if (matchForm) {
+    matchForm.addEventListener("submit", async (event) => {
   event.preventDefault();
 
   const homeTeam = document.getElementById("home-team").value.trim();
@@ -1370,6 +1378,14 @@ function renderPublicMatches() {
 }
 
 function render() {
+  // Sur la page de consultation, afficher uniquement la vue publique
+  if (isConsultaPage) {
+    renderRanking();
+    renderPublicMatches();
+    return;
+  }
+  
+  // Sur la page admin, afficher tout
   renderParticipants();
   renderAdminMatches();
   renderRanking();
