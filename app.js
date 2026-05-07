@@ -852,6 +852,24 @@ function renderAdminMatches() {
         ${formatDate(dayGroup.matches[0].date).split(',')[0]}
       </p>
     `;
+    
+    // Ajouter un bouton WhatsApp dans l'en-tête
+    const whatsappBtn = document.createElement("button");
+    whatsappBtn.textContent = "📱 Copiar resumen WhatsApp";
+    whatsappBtn.style.cssText = `
+      margin-top: 1rem;
+      padding: 0.75rem 1.5rem;
+      background: #25D366;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 0.95rem;
+    `;
+    whatsappBtn.addEventListener("click", () => copyWhatsAppSummary(dayIndex));
+    dayHeader.appendChild(whatsappBtn);
+    
     daySection.appendChild(dayHeader);
     
     // Avertissement de délai
@@ -1051,6 +1069,124 @@ function renderRanking() {
       <tbody>${rows}</tbody>
     </table>
   `;
+
+// Générer un récapitulatif WhatsApp pour une journée
+function generateWhatsAppSummary(dayIndex = 0) {
+  const dayGroups = groupMatchesByDay();
+  
+  if (dayIndex >= dayGroups.length) {
+    alert("❌ Journée invalide");
+    return;
+  }
+  
+  const dayGroup = dayGroups[dayIndex];
+  const ranking = getRanking();
+  
+  let text = "⚽ COPA DEL MUNDO 2026 ⚽\n";
+  text += `📅 ${dayGroup.name}\n\n`;
+  text += "━━━━━━━━━━━━━━━━━━━━━\n";
+  text += "🏆 CLASIFICACIÓN GENERAL\n";
+  text += "━━━━━━━━━━━━━━━━━━━━━\n\n";
+  
+  // Top 3 avec podium
+  ranking.slice(0, 3).forEach((participant, index) => {
+    const medals = ["🥇", "🥈", "🥉"];
+    text += `${medals[index]} ${index + 1}. ${participant.name} - ${participant.totalPoints} pts\n`;
+    text += `   📊 ${participant.exactScores} exactos | ⚽ ${participant.correctFirstGoals} primeros goles\n\n`;
+  });
+  
+  // Reste du classement
+  if (ranking.length > 3) {
+    ranking.slice(3).forEach((participant, index) => {
+      text += `${index + 4}. ${participant.name} - ${participant.totalPoints} pts\n`;
+      text += `   📊 ${participant.exactScores} exactos | ⚽ ${participant.correctFirstGoals} primeros goles\n\n`;
+    });
+  }
+  
+  text += "━━━━━━━━━━━━━━━━━━━━━\n";
+  text += "⚽ PARTIDOS DE LA JORNADA\n";
+  text += "━━━━━━━━━━━━━━━━━━━━━\n\n";
+  
+  // Matchs de la journée
+  dayGroup.matches.forEach((match) => {
+    const actualScore = match.actualScore;
+    const hasResult = actualScore.home !== null && actualScore.away !== null;
+    
+    if (hasResult) {
+      text += `${match.homeTeam} ${actualScore.home}-${actualScore.away} ${match.awayTeam}\n`;
+      
+      // Afficher le premier but si défini
+      if (actualScore.firstGoalTeam) {
+        const firstGoalTeam = actualScore.firstGoalTeam === "home" ? match.homeTeam : match.awayTeam;
+        text += `Primer gol: ${firstGoalTeam} ⚽\n\n`;
+      } else {
+        text += "\n";
+      }
+      
+      // Pronostics de chaque participant
+      state.participants.forEach((participant) => {
+        const prediction = match.predictions[participant.id] || { home: "", away: "", firstGoal: "" };
+        const points = computePredictionPoints(prediction, actualScore);
+        const firstGoalCorrect = isFirstGoalCorrect(prediction, actualScore);
+        
+        let status = "";
+        if (points === 3) status = "✅";
+        else if (points === 1) status = "⚠️";
+        else status = "❌";
+        
+        const firstGoalStatus = firstGoalCorrect ? "✅" : "❌";
+        const firstGoalText = prediction.firstGoal ? 
+          (prediction.firstGoal === "home" ? match.homeTeam : match.awayTeam) : 
+          "-";
+        
+        text += `${participant.name}: ${prediction.home}-${prediction.away} ${status} (${points}pts) | 1er gol: ${firstGoalText} ${firstGoalStatus}\n`;
+      });
+      
+      text += "\n";
+    } else {
+      // Match pas encore joué
+      text += `${match.homeTeam} vs ${match.awayTeam}\n`;
+      text += "⏳ Pendiente\n\n";
+    }
+  });
+  
+  text += "━━━━━━━━━━━━━━━━━━━━━\n";
+  text += "Leyenda:\n";
+  text += "✅ = Correcto | ❌ = Incorrecto | ⚠️ = Resultado correcto (1pt)\n";
+  text += "📊 = Marcadores exactos | ⚽ = Primeros goles correctos\n";
+  
+  return text;
+}
+
+// Copier le récapitulatif WhatsApp dans le presse-papiers
+function copyWhatsAppSummary(dayIndex = 0) {
+  const text = generateWhatsAppSummary(dayIndex);
+  
+  if (!text) return;
+  
+  // Copier dans le presse-papiers
+  navigator.clipboard.writeText(text).then(() => {
+    alert("✅ ¡Resumen copiado al portapapeles!\n\nPuedes pegarlo directamente en WhatsApp.");
+  }).catch((err) => {
+    // Fallback si clipboard API ne fonctionne pas
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    document.body.appendChild(textarea);
+    textarea.select();
+    
+    try {
+      document.execCommand("copy");
+      alert("✅ ¡Resumen copiado al portapapeles!\n\nPuedes pegarlo directamente en WhatsApp.");
+    } catch (err) {
+      alert("❌ Error al copiar. Por favor, copia manualmente:\n\n" + text);
+    }
+    
+    document.body.removeChild(textarea);
+  });
+}
+
 }
 
 function renderPublicMatches() {

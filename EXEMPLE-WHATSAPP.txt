@@ -1,0 +1,57 @@
+⚽ COPA DEL MUNDO 2026 ⚽
+📅 JORNADA 1
+
+━━━━━━━━━━━━━━━━━━━━━
+🏆 CLASIFICACIÓN GENERAL
+━━━━━━━━━━━━━━━━━━━━━
+
+🥇 1. Juan - 12 pts
+   📊 4 exactos | ⚽ 3 primeros goles
+
+🥈 2. María - 10 pts
+   📊 3 exactos | ⚽ 2 primeros goles
+
+🥉 3. Pedro - 8 pts
+   📊 2 exactos | ⚽ 4 primeros goles
+
+4. Laura - 7 pts
+   📊 2 exactos | ⚽ 1 primeros goles
+
+5. Carlos - 5 pts
+   📊 1 exactos | ⚽ 3 primeros goles
+
+━━━━━━━━━━━━━━━━━━━━━
+⚽ PARTIDOS DE LA JORNADA
+━━━━━━━━━━━━━━━━━━━━━
+
+🇺🇸 Estados Unidos 2-1 Gales 🏴󠁧󠁢󠁷󠁬󠁳󠁿
+Primer gol: Estados Unidos ⚽
+
+Juan: 2-1 ✅ (3pts) | 1er gol: Estados Unidos ✅
+María: 1-1 ❌ (0pts) | 1er gol: Gales ❌
+Pedro: 2-0 ⚠️ (1pt) | 1er gol: Estados Unidos ✅
+Laura: 3-1 ⚠️ (1pt) | 1er gol: Estados Unidos ✅
+Carlos: 1-0 ❌ (0pts) | 1er gol: Gales ❌
+
+🇲🇽 México 3-0 Ecuador 🇪🇨
+Primer gol: México ⚽
+
+Juan: 2-0 ⚠️ (1pt) | 1er gol: México ✅
+María: 3-0 ✅ (3pts) | 1er gol: México ✅
+Pedro: 2-1 ❌ (0pts) | 1er gol: Ecuador ❌
+Laura: 3-0 ✅ (3pts) | 1er gol: México ✅
+Carlos: 1-0 ⚠️ (1pt) | 1er gol: México ✅
+
+🇨🇦 Canadá 1-1 Marruecos 🇲🇦
+Primer gol: Canadá ⚽
+
+Juan: 1-1 ✅ (3pts) | 1er gol: Canadá ✅
+María: 2-1 ❌ (0pts) | 1er gol: Canadá ✅
+Pedro: 1-1 ✅ (3pts) | 1er gol: Marruecos ❌
+Laura: 0-0 ❌ (0pts) | 1er gol: - ❌
+Carlos: 1-1 ✅ (3pts) | 1er gol: Canadá ✅
+
+━━━━━━━━━━━━━━━━━━━━━
+Leyenda:
+✅ = Correcto | ❌ = Incorrecto | ⚠️ = Resultado correcto (1pt)
+📊 = Marcadores exactos | ⚽ = Primeros goles correctos
