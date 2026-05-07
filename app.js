@@ -956,11 +956,36 @@ function renderAdminMatches() {
       actualAwayInput.value = match.actualScore.away ?? "";
       actualFirstGoalSelect.value = match.actualScore.firstGoalTeam ?? "";
 
-      fragment.querySelector(".save-result").addEventListener("click", () => {
+      fragment.querySelector(".save-result").addEventListener("click", async () => {
         match.actualScore.home = actualHomeInput.value === "" ? null : Number(actualHomeInput.value);
         match.actualScore.away = actualAwayInput.value === "" ? null : Number(actualAwayInput.value);
         match.actualScore.firstGoalTeam = actualFirstGoalSelect.value === "" ? null : actualFirstGoalSelect.value;
+        
+        // Sauvegarder localement
         saveAndRender();
+        
+        // Sauvegarder dans Firebase si disponible
+        if (typeof firebase !== 'undefined' && firebase.database) {
+          try {
+            const db = firebase.database();
+            const matchRef = db.ref('matches/' + match.id);
+            
+            // Mettre à jour le résultat réel dans Firebase
+            await matchRef.update({
+              actualScore: {
+                home: match.actualScore.home,
+                away: match.actualScore.away,
+                firstGoalTeam: match.actualScore.firstGoalTeam
+              },
+              updatedAt: new Date().toISOString()
+            });
+            
+            console.log("✅ Resultado guardado en Firebase:", match.id);
+          } catch (error) {
+            console.error("❌ Error al guardar resultado en Firebase:", error);
+            alert("⚠️ El resultado se guardó localmente pero no se pudo sincronizar con Firebase.\n\nError: " + error.message);
+          }
+        }
       });
 
       const predictionsTable = fragment.querySelector(".predictions-table");
@@ -1371,7 +1396,11 @@ function listenToFirebaseUpdates() {
         stage: matchData.stage,
         group: matchData.group || null,
         addedManually: matchData.addedManually || false,
-        actualScore: { home: null, away: null, firstGoalTeam: null },
+        actualScore: {
+          home: matchData.actualScore?.home ?? null,
+          away: matchData.actualScore?.away ?? null,
+          firstGoalTeam: matchData.actualScore?.firstGoalTeam ?? null
+        },
         predictions: {}
       }));
       
