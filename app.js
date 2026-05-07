@@ -1102,6 +1102,7 @@ function renderRanking() {
       <tbody>${rows}</tbody>
     </table>
   `;
+}
 
 // Générer un récapitulatif WhatsApp pour une journée
 function generateWhatsAppSummary(dayIndex = 0) {
@@ -1218,8 +1219,6 @@ function copyWhatsAppSummary(dayIndex = 0) {
     
     document.body.removeChild(textarea);
   });
-}
-
 }
 
 function renderPublicMatches() {
