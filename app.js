@@ -997,23 +997,28 @@ function renderAdminMatches() {
         row.className = "prediction-row";
         const prediction = match.predictions[participant.id] || { home: "", away: "", firstGoal: "" };
         const points = computePredictionPoints(prediction, match.actualScore);
+        
+        // Vérifier si ce participant a envoyé ses pronostics via Firebase
+        const isFromFirebase = firebaseParticipants.has(participant.name.toLowerCase());
+        const isDisabled = isFromFirebase ? "disabled" : "";
+        const disabledStyle = isFromFirebase ? "opacity: 0.6; cursor: not-allowed;" : "";
 
         row.innerHTML = `
           <div>
             <strong>${participant.name}</strong>
-            <span class="small-text">Puntuación: 3 marcador exacto / 1 resultado correcto (primer gol = contador aparte)</span>
+            ${isFromFirebase ? '<span class="small-text" style="color: #10b981;">✓ Enviado por el participante</span>' : '<span class="small-text">Puntuación: 3 marcador exacto / 1 resultado correcto (primer gol = contador aparte)</span>'}
           </div>
-          <label>
+          <label style="${disabledStyle}">
             Local
-            <input type="number" min="0" value="${prediction.home}" data-side="home" />
+            <input type="number" min="0" value="${prediction.home}" data-side="home" ${isDisabled} />
           </label>
-          <label>
+          <label style="${disabledStyle}">
             Visitante
-            <input type="number" min="0" value="${prediction.away}" data-side="away" />
+            <input type="number" min="0" value="${prediction.away}" data-side="away" ${isDisabled} />
           </label>
-          <label>
+          <label style="${disabledStyle}">
             Primer gol
-            <select data-side="firstGoal">
+            <select data-side="firstGoal" ${isDisabled}>
               <option value="">-</option>
               <option value="home" ${prediction.firstGoal === "home" ? "selected" : ""}>Local</option>
               <option value="away" ${prediction.firstGoal === "away" ? "selected" : ""}>Visitante</option>
@@ -1026,25 +1031,28 @@ function renderAdminMatches() {
           </div>
         `;
 
-        const inputs = row.querySelectorAll("input");
-        inputs.forEach((input) => {
-          input.addEventListener("change", () => {
-            const target = match.predictions[participant.id] || { home: "", away: "", firstGoal: "" };
-            target[input.dataset.side] = input.value === "" ? "" : Number(input.value);
-            match.predictions[participant.id] = target;
-            saveAndRender();
+        // Ne pas ajouter d'événements si les pronostics viennent de Firebase
+        if (!isFromFirebase) {
+          const inputs = row.querySelectorAll("input");
+          inputs.forEach((input) => {
+            input.addEventListener("change", () => {
+              const target = match.predictions[participant.id] || { home: "", away: "", firstGoal: "" };
+              target[input.dataset.side] = input.value === "" ? "" : Number(input.value);
+              match.predictions[participant.id] = target;
+              saveAndRender();
+            });
           });
-        });
 
-        const selects = row.querySelectorAll("select");
-        selects.forEach((select) => {
-          select.addEventListener("change", () => {
-            const target = match.predictions[participant.id] || { home: "", away: "", firstGoal: "" };
-            target[select.dataset.side] = select.value;
-            match.predictions[participant.id] = target;
-            saveAndRender();
+          const selects = row.querySelectorAll("select");
+          selects.forEach((select) => {
+            select.addEventListener("change", () => {
+              const target = match.predictions[participant.id] || { home: "", away: "", firstGoal: "" };
+              target[select.dataset.side] = select.value;
+              match.predictions[participant.id] = target;
+              saveAndRender();
+            });
           });
-        });
+        }
 
         grid.appendChild(row);
       });
