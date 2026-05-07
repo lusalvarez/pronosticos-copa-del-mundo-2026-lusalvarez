@@ -1180,7 +1180,7 @@ function generateWhatsAppSummary(dayIndex = 0) {
         (prediction.firstGoal === "home" ? match.homeTeam : match.awayTeam) :
         "-";
       
-      text += `${participant.name}: ${prediction.home}-${prediction.away} ${status} (${points}pts) | 1er gol: ${firstGoalText} ${firstGoalStatus}\n`;
+      text += `   _${participant.name}: ${prediction.home}-${prediction.away} ${status} (${points}pts) | 1er gol: ${firstGoalText} ${firstGoalStatus}_\n`;
     });
     
     text += "\n";
