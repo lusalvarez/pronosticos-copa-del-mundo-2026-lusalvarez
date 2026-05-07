@@ -1395,26 +1395,34 @@ function listenToFirebaseUpdates() {
       }
       
       // Convertir l'objet Firebase en tableau en utilisant les IDs Firebase
-      const matchesArray = Object.entries(firebaseMatches).map(([firebaseId, matchData]) => ({
-        id: firebaseId, // Utiliser l'ID Firebase au lieu de générer un nouveau
-        homeTeam: matchData.homeTeam,
-        awayTeam: matchData.awayTeam,
-        date: matchData.date,
-        stage: matchData.stage,
-        group: matchData.group || null,
-        addedManually: matchData.addedManually || false,
-        actualScore: {
-          home: matchData.actualScore?.home ?? null,
-          away: matchData.actualScore?.away ?? null,
-          firstGoalTeam: matchData.actualScore?.firstGoalTeam ?? null
-        },
-        predictions: {}
-      }));
+      const matchesArray = Object.entries(firebaseMatches).map(([firebaseId, matchData]) => {
+        // Chercher le match existant pour préserver les prédictions
+        const existingMatch = state.matches.find(m => m.id === firebaseId);
+        
+        return {
+          id: firebaseId, // Utiliser l'ID Firebase au lieu de générer un nouveau
+          homeTeam: matchData.homeTeam,
+          awayTeam: matchData.awayTeam,
+          date: matchData.date,
+          stage: matchData.stage,
+          group: matchData.group || null,
+          addedManually: matchData.addedManually || false,
+          actualScore: {
+            home: matchData.actualScore?.home ?? null,
+            away: matchData.actualScore?.away ?? null,
+            firstGoalTeam: matchData.actualScore?.firstGoalTeam ?? null
+          },
+          // Préserver les prédictions existantes ou initialiser à vide
+          predictions: existingMatch?.predictions || {}
+        };
+      });
       
-      // Initialiser les prédictions pour chaque participant
+      // Initialiser les prédictions UNIQUEMENT pour les nouveaux participants ou nouveaux matchs
       state.participants.forEach(participant => {
         matchesArray.forEach(match => {
-          match.predictions[participant.id] = { home: "", away: "", firstGoal: "" };
+          if (!match.predictions[participant.id]) {
+            match.predictions[participant.id] = { home: "", away: "", firstGoal: "" };
+          }
         });
       });
       
