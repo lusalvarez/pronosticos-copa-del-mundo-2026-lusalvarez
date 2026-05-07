@@ -427,6 +427,20 @@ function listenToFirebaseUpdates() {
     rankingTable.innerHTML = '<p class="empty-state">⏳ Cargando clasificación...</p>';
     publicMatches.innerHTML = '<p class="empty-state">⏳ Cargando partidos...</p>';
     
+    // Timeout de sécurité
+    let dataLoaded = false;
+    setTimeout(() => {
+      if (!dataLoaded) {
+        console.log("⚠️ Timeout: Los datos tardan en cargar");
+        if (state.matches.length === 0) {
+          publicMatches.innerHTML = '<p class="empty-state" style="color: #f59e0b;">⚠️ No hay datos disponibles todavía. Por favor, asegúrate de que los datos estén en Firebase.</p>';
+        }
+        if (state.participants.length === 0) {
+          rankingTable.innerHTML = '<p class="empty-state" style="color: #f59e0b;">⚠️ No hay participantes todavía.</p>';
+        }
+      }
+    }, 5000);
+    
     // Écouter les matchs depuis Firebase
     matchesRef.on('value', (snapshot) => {
       const firebaseMatches = snapshot.val();
@@ -459,6 +473,7 @@ function listenToFirebaseUpdates() {
       });
       
       state.matches = matchesArray;
+      dataLoaded = true;
       console.log(`✅ ${matchesArray.length} partidos cargados`);
       render();
     });
@@ -504,6 +519,7 @@ function listenToFirebaseUpdates() {
         });
       });
       
+      dataLoaded = true;
       console.log(`✅ ${state.participants.length} participantes cargados`);
       render();
     });
