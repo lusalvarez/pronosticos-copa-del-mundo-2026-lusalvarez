@@ -1106,11 +1106,11 @@ function renderRanking() {
 
 // Générer un récapitulatif WhatsApp pour une journée
 function generateWhatsAppSummary(dayIndex = 0) {
-  const dayGroups = groupMatchesByDay();
+  const dayGroups = groupMatchesByDay(state.matches);
   
   if (dayIndex >= dayGroups.length) {
     alert("❌ Journée invalide");
-    return;
+    return null;
   }
   
   const dayGroup = dayGroups[dayIndex];
