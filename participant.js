@@ -464,7 +464,7 @@ function sendToFirebase() {
         awayTeam: match.awayTeam,
         date: match.date,
         stage: match.stage,
-        prediction: predictions[index] || { home: "", away: "" }
+        prediction: predictions[index] || { home: "", away: "", firstGoal: "" }
       }))
     };
     
@@ -703,7 +703,7 @@ function sendToFirebaseWithValidation(validPredictions, dayIndex) {
         awayTeam: match.awayTeam,
         date: match.date,
         stage: match.stage,
-        prediction: validPredictions[index] || { home: "", away: "" }
+        prediction: validPredictions[index] || { home: "", away: "", firstGoal: "" }
       }))
     };
     

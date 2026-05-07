@@ -1478,7 +1478,12 @@ function listenToFirebaseUpdates() {
         // Mettre à jour les prédictions
         participantData.predictions.forEach((predictionData, index) => {
           if (state.matches[index]) {
-            state.matches[index].predictions[participant.id] = predictionData.prediction;
+            // Migration automatique : ajouter firstGoal si manquant
+            const prediction = predictionData.prediction;
+            if (prediction && !prediction.hasOwnProperty('firstGoal')) {
+              prediction.firstGoal = "";
+            }
+            state.matches[index].predictions[participant.id] = prediction;
           }
         });
       });
