@@ -146,7 +146,7 @@ function listenToNewMatchesFromFirebase() {
         // Initialiser une prédiction vide pour ce match
         const matchIndex = matches.length - 1;
         if (!predictions[matchIndex]) {
-          predictions[matchIndex] = { home: "", away: "" };
+          predictions[matchIndex] = { home: "", away: "", firstGoal: "" };
         }
         
         // Si l'utilisateur est connecté, mettre à jour l'affichage
@@ -1229,7 +1229,7 @@ function renderMatches() {
         pointer-events: ${isLocked ? 'none' : 'auto'};
       `;
 
-      const prediction = predictions[index] || { home: "", away: "" };
+      const prediction = predictions[index] || { home: "", away: "", firstGoal: "" };
 
       card.innerHTML = `
         <h3>${match.homeTeam} - ${match.awayTeam}</h3>
@@ -1263,6 +1263,21 @@ function renderMatches() {
             />
           </label>
         </div>
+        <div style="margin-top: 1rem; padding: 1rem; background: rgba(102, 126, 234, 0.1); border-radius: 8px;">
+          <label style="display: flex; flex-direction: column; gap: 0.5rem;">
+            <strong style="color: #667eea; font-size: 1rem;">⚽ ¿Quién marca el primer gol?</strong>
+            <select
+              data-index="${index}"
+              data-side="firstGoal"
+              style="padding: 0.75rem; font-size: 1rem; border: 2px solid #667eea; border-radius: 8px; background: white; cursor: pointer;"
+              ${isLocked ? 'disabled' : ''}
+            >
+              <option value="">-- Selecciona un equipo --</option>
+              <option value="home" ${prediction.firstGoal === "home" ? "selected" : ""}>${match.homeTeam}</option>
+              <option value="away" ${prediction.firstGoal === "away" ? "selected" : ""}>${match.awayTeam}</option>
+            </select>
+          </label>
+        </div>
       `;
 
       // Ajouter les événements de changement
@@ -1275,10 +1290,26 @@ function renderMatches() {
             const value = e.target.value;
 
             if (!predictions[index]) {
-              predictions[index] = { home: "", away: "" };
+              predictions[index] = { home: "", away: "", firstGoal: "" };
             }
 
             predictions[index][side] = value === "" ? "" : parseInt(value);
+            updateStats();
+          });
+        });
+
+        const selects = card.querySelectorAll("select");
+        selects.forEach((select) => {
+          select.addEventListener("change", (e) => {
+            const index = parseInt(e.target.dataset.index);
+            const side = e.target.dataset.side;
+            const value = e.target.value;
+
+            if (!predictions[index]) {
+              predictions[index] = { home: "", away: "", firstGoal: "" };
+            }
+
+            predictions[index][side] = value;
             updateStats();
           });
         });
@@ -1352,7 +1383,7 @@ function renderMatches() {
           dayPredictions[index] = pred;
         } else {
           // Ajouter une prédiction vide pour les matchs non remplis
-          dayPredictions[index] = { home: "", away: "" };
+          dayPredictions[index] = { home: "", away: "", firstGoal: "" };
         }
       });
       

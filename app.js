@@ -15,7 +15,11 @@ function withDefaultPredictions(data) {
   clone.matches.forEach((match) => {
     clone.participants.forEach((participant) => {
       if (!match.predictions[participant.id]) {
-        match.predictions[participant.id] = { home: "", away: "" };
+        match.predictions[participant.id] = { home: "", away: "", firstGoal: "" };
+      }
+      // Migration: ajouter firstGoal aux prédictions existantes si manquant
+      if (match.predictions[participant.id] && !match.predictions[participant.id].hasOwnProperty('firstGoal')) {
+        match.predictions[participant.id].firstGoal = "";
       }
     });
   });
@@ -45,13 +49,13 @@ function seedPredictions(data) {
     const [match1, match2] = data.matches;
     const [alice, bruno, chloe] = data.participants;
 
-    match1.predictions[alice.id] = { home: 2, away: 1 };
-    match1.predictions[bruno.id] = { home: 1, away: 0 };
-    match1.predictions[chloe.id] = { home: 2, away: 2 };
+    match1.predictions[alice.id] = { home: 2, away: 1, firstGoal: "home" };
+    match1.predictions[bruno.id] = { home: 1, away: 0, firstGoal: "home" };
+    match1.predictions[chloe.id] = { home: 2, away: 2, firstGoal: "away" };
 
-    match2.predictions[alice.id] = { home: 1, away: 1 };
-    match2.predictions[bruno.id] = { home: 0, away: 2 };
-    match2.predictions[chloe.id] = { home: 2, away: 1 };
+    match2.predictions[alice.id] = { home: 1, away: 1, firstGoal: "home" };
+    match2.predictions[bruno.id] = { home: 0, away: 2, firstGoal: "away" };
+    match2.predictions[chloe.id] = { home: 2, away: 1, firstGoal: "home" };
   }
 
   return data;
@@ -97,6 +101,7 @@ participantForm.addEventListener("submit", (event) => {
     match.predictions[state.participants[state.participants.length - 1].id] = {
       home: "",
       away: "",
+      firstGoal: "",
     };
   });
 
@@ -171,7 +176,7 @@ matchForm.addEventListener("submit", async (event) => {
     // Fallback: ajout local uniquement si Firebase n'est pas disponible
     const predictions = {};
     state.participants.forEach((participant) => {
-      predictions[participant.id] = { home: "", away: "" };
+      predictions[participant.id] = { home: "", away: "", firstGoal: "" };
     });
 
     state.matches.push({
@@ -179,7 +184,7 @@ matchForm.addEventListener("submit", async (event) => {
       homeTeam,
       awayTeam,
       date,
-      actualScore: { home: null, away: null },
+      actualScore: { home: null, away: null, firstGoalTeam: null },
       predictions,
     });
 
@@ -264,7 +269,7 @@ fileInput.addEventListener("change", async (event) => {
         data.matches.forEach((match) => {
           const predictions = {};
           state.participants.forEach((participant) => {
-            predictions[participant.id] = { home: "", away: "" };
+            predictions[participant.id] = { home: "", away: "", firstGoal: "" };
           });
 
           const newMatch = {
@@ -274,7 +279,7 @@ fileInput.addEventListener("change", async (event) => {
             date: match.date,
             stage: match.stage || "Fase de grupos",
             group: match.group || null,
-            actualScore: { home: null, away: null },
+            actualScore: { home: null, away: null, firstGoalTeam: null },
             predictions,
           };
           
@@ -516,15 +521,45 @@ function computePredictionPoints(prediction, actualScore) {
     return 0;
   }
 
+  // Points pour le score uniquement (pas de bonus pour le premier but)
   if (predictedHome === actualHome && predictedAway === actualAway) {
-    return 3;
+    return 3; // Score exact
   }
 
   if (getOutcome(predictedHome, predictedAway) === getOutcome(actualHome, actualAway)) {
-    return 1;
+    return 1; // Résultat correct
   }
 
   return 0;
+}
+
+// Vérifier si le pronostic du premier but est correct
+function isFirstGoalCorrect(prediction, actualScore) {
+  const predictedHome = toNumber(prediction.home);
+  const predictedAway = toNumber(prediction.away);
+  const actualHome = toNumber(actualScore.home);
+  const actualAway = toNumber(actualScore.away);
+
+  // Si le score réel n'est pas encore défini, retourner false
+  if (actualHome === null || actualAway === null) {
+    return false;
+  }
+
+  // Cas spécial : match nul 0-0
+  // Si pronostic 0-0 sans premier but ET résultat 0-0, c'est correct
+  if (predictedHome === 0 && predictedAway === 0 &&
+      actualHome === 0 && actualAway === 0 &&
+      (!prediction.firstGoal || prediction.firstGoal === "")) {
+    return true;
+  }
+
+  // Si le premier but n'est pas renseigné dans le pronostic ou le résultat réel
+  if (!prediction.firstGoal || !actualScore.firstGoalTeam) {
+    return false;
+  }
+
+  // Vérifier si le pronostic du premier but correspond au résultat réel
+  return prediction.firstGoal === actualScore.firstGoalTeam;
 }
 
 function getRanking() {
@@ -543,13 +578,19 @@ function getRanking() {
         );
       }).length;
 
+      // Compter les pronostics corrects du premier but
+      const correctFirstGoals = state.matches.filter((match) => {
+        return isFirstGoalCorrect(match.predictions[participant.id], match.actualScore);
+      }).length;
+
       return {
         ...participant,
         totalPoints,
         exactScores,
+        correctFirstGoals,
       };
     })
-    .sort((a, b) => b.totalPoints - a.totalPoints || b.exactScores - a.exactScores || a.name.localeCompare(b.name));
+    .sort((a, b) => b.totalPoints - a.totalPoints || b.exactScores - a.exactScores || b.correctFirstGoals - a.correctFirstGoals || a.name.localeCompare(b.name));
 }
 
 function saveAndRender() {
@@ -892,12 +933,15 @@ function renderAdminMatches() {
 
       const actualHomeInput = fragment.querySelector(".actual-home");
       const actualAwayInput = fragment.querySelector(".actual-away");
+      const actualFirstGoalSelect = fragment.querySelector(".actual-first-goal");
       actualHomeInput.value = match.actualScore.home ?? "";
       actualAwayInput.value = match.actualScore.away ?? "";
+      actualFirstGoalSelect.value = match.actualScore.firstGoalTeam ?? "";
 
       fragment.querySelector(".save-result").addEventListener("click", () => {
         match.actualScore.home = actualHomeInput.value === "" ? null : Number(actualHomeInput.value);
         match.actualScore.away = actualAwayInput.value === "" ? null : Number(actualAwayInput.value);
+        match.actualScore.firstGoalTeam = actualFirstGoalSelect.value === "" ? null : actualFirstGoalSelect.value;
         saveAndRender();
       });
 
@@ -908,13 +952,13 @@ function renderAdminMatches() {
       state.participants.forEach((participant) => {
         const row = document.createElement("div");
         row.className = "prediction-row";
-        const prediction = match.predictions[participant.id] || { home: "", away: "" };
+        const prediction = match.predictions[participant.id] || { home: "", away: "", firstGoal: "" };
         const points = computePredictionPoints(prediction, match.actualScore);
 
         row.innerHTML = `
           <div>
             <strong>${participant.name}</strong>
-            <span class="small-text">Puntuación: 3 marcador exacto / 1 resultado correcto</span>
+            <span class="small-text">Puntuación: 3 marcador exacto / 1 resultado correcto (primer gol = contador aparte)</span>
           </div>
           <label>
             Local
@@ -923,6 +967,14 @@ function renderAdminMatches() {
           <label>
             Visitante
             <input type="number" min="0" value="${prediction.away}" data-side="away" />
+          </label>
+          <label>
+            Primer gol
+            <select data-side="firstGoal">
+              <option value="">-</option>
+              <option value="home" ${prediction.firstGoal === "home" ? "selected" : ""}>Local</option>
+              <option value="away" ${prediction.firstGoal === "away" ? "selected" : ""}>Visitante</option>
+            </select>
           </label>
           <div>
             <span class="${match.actualScore.home === null ? "status-pending" : "status-success"}">
@@ -934,8 +986,18 @@ function renderAdminMatches() {
         const inputs = row.querySelectorAll("input");
         inputs.forEach((input) => {
           input.addEventListener("change", () => {
-            const target = match.predictions[participant.id] || { home: "", away: "" };
+            const target = match.predictions[participant.id] || { home: "", away: "", firstGoal: "" };
             target[input.dataset.side] = input.value === "" ? "" : Number(input.value);
+            match.predictions[participant.id] = target;
+            saveAndRender();
+          });
+        });
+
+        const selects = row.querySelectorAll("select");
+        selects.forEach((select) => {
+          select.addEventListener("change", () => {
+            const target = match.predictions[participant.id] || { home: "", away: "", firstGoal: "" };
+            target[select.dataset.side] = select.value;
             match.predictions[participant.id] = target;
             saveAndRender();
           });
@@ -969,6 +1031,7 @@ function renderRanking() {
           <td>${participant.name}</td>
           <td>${participant.totalPoints}</td>
           <td>${participant.exactScores}</td>
+          <td>${participant.correctFirstGoals}</td>
         </tr>
       `
     )
@@ -982,6 +1045,7 @@ function renderRanking() {
           <th>Participante</th>
           <th>Puntos</th>
           <th>Marcadores exactos</th>
+          <th>⚽ Primeros goles</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -1171,14 +1235,14 @@ function listenToFirebaseUpdates() {
         stage: matchData.stage,
         group: matchData.group || null,
         addedManually: matchData.addedManually || false,
-        actualScore: { home: null, away: null },
+        actualScore: { home: null, away: null, firstGoalTeam: null },
         predictions: {}
       }));
       
       // Initialiser les prédictions pour chaque participant
       state.participants.forEach(participant => {
         matchesArray.forEach(match => {
-          match.predictions[participant.id] = { home: "", away: "" };
+          match.predictions[participant.id] = { home: "", away: "", firstGoal: "" };
         });
       });
       
