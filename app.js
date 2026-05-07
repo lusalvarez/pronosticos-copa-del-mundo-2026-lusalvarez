@@ -1146,47 +1146,44 @@ function generateWhatsAppSummary(dayIndex = 0) {
   text += "⚽ PARTIDOS DE LA JORNADA\n";
   text += "━━━━━━━━━━━━━━━━━━━━━\n\n";
   
-  // Matchs de la journée
+  // Matchs de la journée (seulement ceux avec résultat)
   dayGroup.matches.forEach((match) => {
     const actualScore = match.actualScore;
     const hasResult = actualScore.home !== null && actualScore.away !== null;
     
-    if (hasResult) {
-      text += `${match.homeTeam} ${actualScore.home}-${actualScore.away} ${match.awayTeam}\n`;
-      
-      // Afficher le premier but si défini
-      if (actualScore.firstGoalTeam) {
-        const firstGoalTeam = actualScore.firstGoalTeam === "home" ? match.homeTeam : match.awayTeam;
-        text += `Primer gol: ${firstGoalTeam} ⚽\n\n`;
-      } else {
-        text += "\n";
-      }
-      
-      // Pronostics de chaque participant
-      state.participants.forEach((participant) => {
-        const prediction = match.predictions[participant.id] || { home: "", away: "", firstGoal: "" };
-        const points = computePredictionPoints(prediction, actualScore);
-        const firstGoalCorrect = isFirstGoalCorrect(prediction, actualScore);
-        
-        let status = "";
-        if (points === 3) status = "✅";
-        else if (points === 1) status = "⚠️";
-        else status = "❌";
-        
-        const firstGoalStatus = firstGoalCorrect ? "✅" : "❌";
-        const firstGoalText = prediction.firstGoal ? 
-          (prediction.firstGoal === "home" ? match.homeTeam : match.awayTeam) : 
-          "-";
-        
-        text += `${participant.name}: ${prediction.home}-${prediction.away} ${status} (${points}pts) | 1er gol: ${firstGoalText} ${firstGoalStatus}\n`;
-      });
-      
-      text += "\n";
+    // Ne pas afficher les matchs en attente
+    if (!hasResult) return;
+    
+    text += `${match.homeTeam} ${actualScore.home}-${actualScore.away} ${match.awayTeam}\n`;
+    
+    // Afficher le premier but si défini
+    if (actualScore.firstGoalTeam) {
+      const firstGoalTeam = actualScore.firstGoalTeam === "home" ? match.homeTeam : match.awayTeam;
+      text += `Primer gol: ${firstGoalTeam} ⚽\n\n`;
     } else {
-      // Match pas encore joué
-      text += `${match.homeTeam} vs ${match.awayTeam}\n`;
-      text += "⏳ Pendiente\n\n";
+      text += "\n";
     }
+    
+    // Pronostics de chaque participant
+    state.participants.forEach((participant) => {
+      const prediction = match.predictions[participant.id] || { home: "", away: "", firstGoal: "" };
+      const points = computePredictionPoints(prediction, actualScore);
+      const firstGoalCorrect = isFirstGoalCorrect(prediction, actualScore);
+      
+      let status = "";
+      if (points === 3) status = "✅";
+      else if (points === 1) status = "⚠️";
+      else status = "❌";
+      
+      const firstGoalStatus = firstGoalCorrect ? "✅" : "❌";
+      const firstGoalText = prediction.firstGoal ?
+        (prediction.firstGoal === "home" ? match.homeTeam : match.awayTeam) :
+        "-";
+      
+      text += `${participant.name}: ${prediction.home}-${prediction.away} ${status} (${points}pts) | 1er gol: ${firstGoalText} ${firstGoalStatus}\n`;
+    });
+    
+    text += "\n";
   });
   
   text += "━━━━━━━━━━━━━━━━━━━━━\n";
