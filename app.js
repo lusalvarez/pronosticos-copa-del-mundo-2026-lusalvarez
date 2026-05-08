@@ -1338,10 +1338,16 @@ function renderPublicMatches() {
       const fragment = publicTemplate.content.cloneNode(true);
       fragment.querySelector(".match-title").textContent = `${match.homeTeam} - ${match.awayTeam}`;
       fragment.querySelector(".match-date").textContent = formatDate(match.date);
-      fragment.querySelector(".result-badge").textContent =
-        match.actualScore.home === null
-          ? "Resultado pendiente"
-          : `Resultado: ${match.actualScore.home} - ${match.actualScore.away}`;
+      
+      const resultBadge = fragment.querySelector(".result-badge");
+      if (match.actualScore.home === null) {
+        resultBadge.textContent = "Resultado pendiente";
+      } else {
+        const firstGoalText = match.actualScore.firstGoalTeam
+          ? ` | ⚽ Primer gol: ${match.actualScore.firstGoalTeam === 'home' ? match.homeTeam : match.awayTeam}`
+          : '';
+        resultBadge.textContent = `Resultado: ${match.actualScore.home} - ${match.actualScore.away}${firstGoalText}`;
+      }
 
       const predictionsWrapper = fragment.querySelector(".public-predictions");
       const grid = document.createElement("div");
