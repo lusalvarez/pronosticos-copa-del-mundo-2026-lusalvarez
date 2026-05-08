@@ -202,12 +202,16 @@ if (!isConsultaPage) {
     alert("⚠️ Partido agregado localmente.\n\nFirebase no está disponible. Los participantes no verán este partido.");
   }
 });
+  }
 
-importMatchesBtn.addEventListener("click", () => {
-  fileInput.click();
-});
+  if (importMatchesBtn) {
+    importMatchesBtn.addEventListener("click", () => {
+      fileInput.click();
+    });
+  }
 
-fileInput.addEventListener("change", async (event) => {
+  if (fileInput) {
+    fileInput.addEventListener("change", async (event) => {
   const file = event.target.files[0];
   if (!file) return;
 
@@ -306,10 +310,12 @@ fileInput.addEventListener("change", async (event) => {
   };
 
   reader.readAsText(file);
-});
+    });
+  }
 
-// Supprimer tous les matchs (local + Firebase + localStorage)
-deleteAllMatchesBtn.addEventListener("click", async () => {
+  // Supprimer tous les matchs (local + Firebase + localStorage)
+  if (deleteAllMatchesBtn) {
+    deleteAllMatchesBtn.addEventListener("click", async () => {
   if (state.matches.length === 0) {
     alert("⚠️ No hay partidos para eliminar.");
     return;
@@ -376,7 +382,9 @@ deleteAllMatchesBtn.addEventListener("click", async () => {
       `⚠️ Firebase no está disponible. Los participantes no verán esta actualización automáticamente.`
     );
   }
-});
+    });
+  }
+}
 
 function switchView(view) {
   const isAdmin = view === "admin";
