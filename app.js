@@ -1362,10 +1362,22 @@ function renderPublicMatches() {
       grid.className = "predictions-grid";
 
       state.participants.forEach((participant) => {
-        const prediction = match.predictions[participant.id] || { home: "", away: "" };
+        const prediction = match.predictions[participant.id] || { home: "", away: "", firstGoal: "" };
         const points = computePredictionPoints(prediction, match.actualScore);
+        const firstGoalCorrect = isFirstGoalCorrect(prediction, match.actualScore);
+        
         const row = document.createElement("div");
         row.className = "prediction-row";
+        
+        let firstGoalDisplay = '';
+        if (prediction.firstGoal) {
+          const firstGoalTeamName = prediction.firstGoal === 'home' ? match.homeTeam : match.awayTeam;
+          firstGoalDisplay = `⚽ ${firstGoalTeamName}`;
+          if (match.actualScore.firstGoalTeam) {
+            firstGoalDisplay += firstGoalCorrect ? ' ✅' : ' ❌';
+          }
+        }
+        
         row.innerHTML = `
           <div>
             <strong>${participant.name}</strong>
@@ -1373,6 +1385,9 @@ function renderPublicMatches() {
           </div>
           <div>${prediction.home === "" ? "-" : prediction.home}</div>
           <div>${prediction.away === "" ? "-" : prediction.away}</div>
+          <div>
+            <span class="small-text">${firstGoalDisplay || '-'}</span>
+          </div>
           <div>
             <span class="${match.actualScore.home === null ? "status-pending" : "status-success"}">
               ${match.actualScore.home === null ? "Partido no jugado" : `${points} punto(s)`}
