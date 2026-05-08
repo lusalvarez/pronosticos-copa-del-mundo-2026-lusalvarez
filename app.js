@@ -1170,12 +1170,20 @@ function generateWhatsAppSummary(dayIndex = 0) {
     // Ne pas afficher les matchs en attente
     if (!hasResult) return;
     
-    text += `${match.homeTeam} ${actualScore.home}-${actualScore.away} ${match.awayTeam}\n`;
+    // Formater la date au format jj/mois
+    const matchDate = new Date(match.date);
+    const day = matchDate.getDate();
+    const monthNames = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+    const month = monthNames[matchDate.getMonth()];
+    const dateStr = `${day}/${month}`;
+    
+    // Noms des équipes et scores en gras
+    text += `${dateStr} - *${match.homeTeam}* *${actualScore.home}-${actualScore.away}* *${match.awayTeam}*\n`;
     
     // Afficher le premier but si défini
     if (actualScore.firstGoalTeam) {
       const firstGoalTeam = actualScore.firstGoalTeam === "home" ? match.homeTeam : match.awayTeam;
-      text += `Primer gol: ${firstGoalTeam} ⚽\n\n`;
+      text += `Primer gol: *${firstGoalTeam}* ⚽\n\n`;
     } else {
       text += "\n";
     }
