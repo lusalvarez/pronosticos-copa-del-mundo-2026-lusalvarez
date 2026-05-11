@@ -18,6 +18,41 @@ function hashPassword(password) {
   return hash.toString();
 }
 
+function normalizeParticipantId(name) {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, "-");
+}
+
+function findLegacyPasswordMatch(rawPassword, passwordHash) {
+  if (!/^\d+$/.test(rawPassword)) {
+    return null;
+  }
+
+  const candidates = [rawPassword];
+
+  if (rawPassword.length === 4) {
+    const permutations = [
+      rawPassword,
+      rawPassword.split("").reverse().join(""),
+      rawPassword.slice(1) + rawPassword[0],
+      rawPassword.slice(2) + rawPassword.slice(0, 2),
+      rawPassword.slice(3) + rawPassword.slice(0, 3)
+    ];
+
+    permutations.forEach((candidate) => {
+      if (!candidates.includes(candidate)) {
+        candidates.push(candidate);
+      }
+    });
+  }
+
+  return candidates.find((candidate) => hashPassword(candidate) === passwordHash) || null;
+}
+
 // Charger automatiquement les matchs depuis Firebase
 function loadMatchesFromSharedData() {
   const loadingDiv = document.getElementById("loading-matches");
@@ -452,7 +487,7 @@ function sendToFirebase() {
   
   try {
     const db = firebase.database();
-    const participantId = participantName.toLowerCase().replace(/\s+/g, "-");
+    const participantId = normalizeParticipantId(participantName);
     
     // Préparer les données pour Firebase (avec mot de passe haché)
     const firebaseData = {
@@ -569,9 +604,10 @@ function showConfirmationModal(dayGroup, dayPredictions, completedCount, totalCo
   
   let tableHTML = `
     <div style="background: #f3f4f6; padding: 0.75rem; font-weight: bold; border-bottom: 2px solid #d1d5db;">
-      <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem; font-size: 0.9rem;">
+      <div style="display: grid; grid-template-columns: 2fr 1fr 1.2fr; gap: 0.5rem; font-size: 0.9rem;">
         <div>Partido</div>
         <div style="text-align: center;">Pronóstico</div>
+        <div style="text-align: center;">1er gol</div>
       </div>
     </div>
   `;
@@ -580,15 +616,24 @@ function showConfirmationModal(dayGroup, dayPredictions, completedCount, totalCo
     const index = match.originalIndex;
     const pred = dayPredictions[index];
     const isEmpty = !pred || pred.home === "" || pred.away === "";
+    const firstGoalTeam =
+      pred?.firstGoal === "home"
+        ? match.homeTeam
+        : pred?.firstGoal === "away"
+          ? match.awayTeam
+          : "—";
     
     tableHTML += `
       <div style="padding: 0.75rem; border-bottom: 1px solid #e5e7eb; ${isEmpty ? 'background: #fee2e2;' : 'background: #f0fdf4;'}">
-        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 0.5rem; align-items: center; font-size: 0.9rem;">
+        <div style="display: grid; grid-template-columns: 2fr 1fr 1.2fr; gap: 0.5rem; align-items: center; font-size: 0.9rem;">
           <div style="font-weight: 500; color: #1f2937;">
             ${match.homeTeam} vs ${match.awayTeam}
           </div>
           <div style="text-align: center; font-weight: bold; font-size: 1.1rem; ${isEmpty ? 'color: #991b1b;' : 'color: #065f46;'}">
             ${isEmpty ? '❌ Vacío' : `${pred.home} - ${pred.away}`}
+          </div>
+          <div style="text-align: center; font-weight: 600; color: ${pred?.firstGoal ? '#1d4ed8' : '#6b7280'};">
+            ${firstGoalTeam}
           </div>
         </div>
       </div>
@@ -691,7 +736,7 @@ function sendToFirebaseWithValidation(validPredictions, dayIndex) {
   
   try {
     const db = firebase.database();
-    const participantId = participantName.toLowerCase().replace(/\s+/g, "-");
+    const participantId = normalizeParticipantId(participantName);
     
     // Préparer les données pour Firebase (avec mot de passe haché)
     const firebaseData = {
@@ -799,20 +844,29 @@ startBtn.addEventListener("click", async () => {
   if (typeof firebase !== 'undefined' && firebase.database) {
     try {
       const db = firebase.database();
-      const participantId = name.toLowerCase().replace(/\s+/g, "-");
+      const participantId = normalizeParticipantId(name);
       const snapshot = await db.ref('participants/' + participantId).once('value');
       
       if (snapshot.exists()) {
         // Le participant existe dans Firebase, vérifier le mot de passe
         const existingData = snapshot.val();
+        const storedPasswordHash = existingData.passwordHash;
+        const storedLegacyPassword = existingData.password;
+        const matchedLegacyPassword = storedPasswordHash
+          ? findLegacyPasswordMatch(password, storedPasswordHash)
+          : null;
+        const passwordMatches =
+          storedPasswordHash === inputPasswordHash ||
+          storedLegacyPassword === password ||
+          matchedLegacyPassword !== null;
         
-        if (existingData.passwordHash !== inputPasswordHash) {
+        if (!passwordMatches) {
           alert("❌ Contraseña incorrecta para este participante.\n\nSi olvidaste tu contraseña, contacta al administrador.");
           return;
         }
         
         // Mot de passe correct
-        participantName = name;
+        participantName = existingData.participantName || name;
         participantPassword = inputPasswordHash;
         
         // Vérifier si le nombre de matchs correspond
@@ -851,6 +905,19 @@ startBtn.addEventListener("click", async () => {
           }
         });
         
+        // Migrer automatiquement les anciens enregistrements vers passwordHash
+        if (storedPasswordHash !== inputPasswordHash || existingData.password) {
+          const migratedFirebaseData = {
+            ...existingData,
+            participantName,
+            passwordHash: inputPasswordHash
+          };
+          
+          delete migratedFirebaseData.password;
+          await db.ref('participants/' + participantId).set(migratedFirebaseData);
+          console.log("🔄 Contraseña migrada al formato passwordHash");
+        }
+
         saveData();
         showMainView();
         return;
@@ -1380,7 +1447,11 @@ function renderMatches() {
         
         if (pred && pred.home !== "" && pred.away !== "") {
           completedCount++;
-          dayPredictions[index] = pred;
+          dayPredictions[index] = {
+            home: pred.home,
+            away: pred.away,
+            firstGoal: pred.firstGoal || ""
+          };
         } else {
           // Ajouter une prédiction vide pour les matchs non remplis
           dayPredictions[index] = { home: "", away: "", firstGoal: "" };
