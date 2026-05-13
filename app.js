@@ -1533,6 +1533,9 @@ function listenToFirebaseUpdates() {
       
       console.log(`✅ ${matchesArray.length} partidos cargados desde Firebase`);
       
+      // Nettoyer les pronostics orphelins APRÈS le chargement des matchs
+      state = cleanOrphanPredictions(state);
+      
       // Sauvegarder et rafraîchir l'affichage
       persistState(state);
       render();
@@ -1588,6 +1591,9 @@ function listenToFirebaseUpdates() {
       });
       
       console.log(`📋 Participantes con pronósticos enviados: ${firebaseParticipants.size}`);
+      
+      // Nettoyer les pronostics orphelins APRÈS la synchronisation Firebase
+      state = cleanOrphanPredictions(state);
       
       // Sauvegarder et rafraîchir l'affichage
       persistState(state);
