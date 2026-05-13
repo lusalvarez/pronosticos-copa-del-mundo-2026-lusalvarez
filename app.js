@@ -1562,13 +1562,10 @@ function listenToFirebaseUpdates() {
         );
         
         if (!participant) {
-          // Créer automatiquement le participant s'il n'existe pas
-          participant = {
-            id: crypto.randomUUID(),
-            name: participantName
-          };
-          state.participants.push(participant);
-          console.log(`✅ Nuevo participante agregado automáticamente: ${participantName}`);
+          // Ne PAS recréer automatiquement un participant qui pourrait avoir été supprimé
+          // Vérifier d'abord si ce participant existe vraiment dans Firebase
+          console.log(`⚠️ Participante ${participantName} existe en Firebase pero no localmente - ignorando para evitar recreación no deseada`);
+          return; // Ignorer ce participant au lieu de le recréer
         }
         
         // Mettre à jour les prédictions
