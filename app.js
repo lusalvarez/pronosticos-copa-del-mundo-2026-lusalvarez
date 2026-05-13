@@ -635,7 +635,13 @@ function deleteParticipant(participantId) {
   if (participantName && typeof firebase !== 'undefined' && firebase.database) {
     try {
       const db = firebase.database();
-      const participantFirebaseId = participantName.toLowerCase().replace(/\s+/g, "-");
+      // Normaliser l'ID Firebase de la même manière que dans participant.js
+      const participantFirebaseId = participantName
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .trim()
+        .replace(/\s+/g, "-");
       
       db.ref('participants/' + participantFirebaseId).remove()
         .then(() => {
