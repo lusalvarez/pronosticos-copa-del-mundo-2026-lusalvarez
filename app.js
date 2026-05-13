@@ -30,6 +30,30 @@ function withDefaultPredictions(data) {
   return clone;
 }
 
+function cleanOrphanPredictions(state) {
+  // Créer un Set des IDs de participants valides pour une recherche rapide
+  const validParticipantIds = new Set(state.participants.map(p => p.id));
+  
+  // Nettoyer les pronostics orphelins dans chaque match
+  let cleanedCount = 0;
+  state.matches.forEach(match => {
+    if (match.predictions) {
+      Object.keys(match.predictions).forEach(participantId => {
+        if (!validParticipantIds.has(participantId)) {
+          delete match.predictions[participantId];
+          cleanedCount++;
+        }
+      });
+    }
+  });
+  
+  if (cleanedCount > 0) {
+    console.log(`🧹 Nettoyage: ${cleanedCount} pronostic(s) orphelin(s) supprimé(s)`);
+  }
+  
+  return state;
+}
+
 function loadState() {
   const saved = localStorage.getItem(STORAGE_KEY);
   if (!saved) {
@@ -39,7 +63,9 @@ function loadState() {
   }
 
   try {
-    return withDefaultPredictions(JSON.parse(saved));
+    const loadedState = withDefaultPredictions(JSON.parse(saved));
+    // Nettoyer les pronostics orphelins au chargement
+    return cleanOrphanPredictions(loadedState);
   } catch (error) {
     const fallback = seedPredictions(withDefaultPredictions(initialData));
     persistState(fallback);
@@ -1014,7 +1040,10 @@ function renderAdminMatches() {
       const grid = document.createElement("div");
       grid.className = "predictions-grid";
 
-      state.participants.forEach((participant) => {
+      // Filtrer uniquement les participants qui existent encore
+      const validParticipants = state.participants.filter(p => p && p.id && p.name);
+      
+      validParticipants.forEach((participant) => {
         const row = document.createElement("div");
         row.className = "prediction-row";
         const prediction = match.predictions[participant.id] || { home: "", away: "", firstGoal: "" };
