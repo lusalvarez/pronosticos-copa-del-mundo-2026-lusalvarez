@@ -96,6 +96,10 @@ function persistState(state) {
 
 let state = loadState();
 
+// Forcer un nettoyage immédiat au démarrage
+state = cleanOrphanPredictions(state);
+persistState(state);
+
 const adminView = document.getElementById("admin-view");
 const publicView = document.getElementById("public-view");
 const participantForm = document.getElementById("participant-form");
@@ -636,6 +640,8 @@ function getRanking() {
 }
 
 function saveAndRender() {
+  // Nettoyer les pronostics orphelins avant de sauvegarder
+  state = cleanOrphanPredictions(state);
   persistState(state);
   render();
 }
